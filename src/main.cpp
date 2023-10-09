@@ -1,58 +1,51 @@
-#include <Arduino.h>
-#include <PubSubClient.h>
 #include <WiFi.h>
 
-const char* ssid = "Your_WiFi_SSID";
-const char* password = "Your_WiFi_Password";
+const char* ssid = "Nie mam wi-fi";
+const char* password = "makaronzpomidorami";
+const char* thingsboardServer = "thingsboardrpi.duckdns.org";
+const char* accessToken = "95qx4nyy0no8vig0ib0a";
 
-const char* mqttServer = "thingsboardrpi.duckdns.org";
-const int mqttPort = 1883;
-const char* mqttUsername = "your_mqtt_username";
-const char* mqttPassword = "your_mqtt_password";
-
-WiFiClient wifiClient;
-PubSubClient mqttClient(wifiClient);
+WiFiClient client;
 
 void setup() {
-  // Initialize Wi-Fi
+  Serial.begin(115200);
+  delay(10);
+
+  // Connect to Wi-Fi
+  Serial.println();
+  Serial.println("Connecting to WiFi...");
   WiFi.begin(ssid, password);
+
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.println("Connecting to WiFi...");
   }
+
   Serial.println("Connected to WiFi");
-
-  // Initialize MQTT
-  mqttClient.setServer(mqttServer, mqttPort);
-  mqttClient.setCallback(callback);
-
-  // Connect to MQTT
-  reconnect();
-}
-
-void callback(char* topic, byte* payload, unsigned int length) {
-  // Handle MQTT messages received here
-}
-
-void reconnect() {
-  while (!mqttClient.connected()) {
-    Serial.println("Attempting MQTT connection...");
-    if (mqttClient.connect("ESP32Client", mqttUsername, mqttPassword)) {
-      Serial.println("Connected to MQTT broker");
-      // Subscribe to MQTT topics if needed
-    } else {
-      Serial.print("Failed, rc=");
-      Serial.print(mqttClient.state());
-      Serial.println(" Trying again in 5 seconds...");
-      delay(5000);
-    }
-  }
 }
 
 void loop() {
-  if (!mqttClient.connected()) {
-    reconnect();
+  // Replace these values with your sensor data
+  String data = "{ \"temperature\": 25.5, \"humidity\": 50.2 }"; // JSON format
+
+  // Create an HTTP request
+  String url = "/api/v1/" + String(accessToken) + "/telemetry"; // ThingsBoard telemetry endpoint
+
+  // Send the HTTP POST request to ThingsBoard
+  if (client.connect(thingsboardServer, 80)) {
+    Serial.println("Connected to ThingsBoard");
+    client.print("POST " + url + " HTTP/1.1\r\n");
+    client.print("Host: " + String(thingsboardServer) + "\r\n");
+    client.print("Content-Type: application/json\r\n");
+    client.print("Content-Length: " + String(data.length()) + "\r\n");
+    client.print("\r\n");
+    client.print(data);
+    client.stop();
+    Serial.println("Data sent to ThingsBoard");
+  } else {
+    Serial.println("Unable to connect to ThingsBoard");
   }
-  mqttClient.loop();
-  // Add your data publishing logic here
+
+  // Wait for a fixed interval before sending the next update
+  delay(15000); // Send data every 15 seconds
 }
