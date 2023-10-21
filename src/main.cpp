@@ -1,10 +1,11 @@
 #include <WiFi.h>
+#include <Arduino.h>
 #include <PubSubClient.h>
 #include <Wire.h>
 #include <SHT3x.h>
 #include "MAX30105.h"
 #include "heartRate.h"
-
+// #define BAT_ADC_PIN 35
 // Sensors adressess
 SHT3x tempAndHumSensor(0x44);
 MAX30105 PulseAndSP2OSensor;
@@ -16,6 +17,9 @@ const char* MQTT_SERVER = "thingsboardrpi.duckdns.org";
 const int MQTT_PORT = 1883;
 const char* MQTT_TOKEN = "og3ms9bts9x8a9agm00c";
 const byte RATE_SIZE = 4; //Increase this for more averaging. 4 is good.
+// const float ADC_RES = 4095;
+// const float V_REF = 3.3;
+
 
 // Global variables
 WiFiClient espClient;
@@ -23,8 +27,26 @@ PubSubClient mqttClient(espClient);
 byte rates[RATE_SIZE]; //Array of heart rates
 byte rateSpot = 0;
 long lastBeat = 0; //Time at which the last beat occurred
-float beatsPerMinute;
+float bpm;
 int beatAvg;
+
+// void readBatVol() {
+//   int adcValue = analogRead(BAT_ADC_PIN);
+//   float voltage = ((float)adcValue / ADC_RES)*V_REF;
+//   Serial.print("Battery vol: ");
+//   Serial.print(voltage);
+
+//   char payload[100];
+//   snprintf(payload, sizeof(payload), "{\"voltage\": %.2f}", voltage);
+//   mqttClient.publish("v1/devices/me/telemetry", payload);
+//   // bool publishVoltage = mqttClient.publish("v1/devices/me/telemetry",payload);
+//   // if (publishVoltage) {
+//   //   Serial.println("Publish successful");
+//   // } else {
+//   //   Serial.println("Publish failed");
+//   // }
+
+// }
 
 
 void wifiSetup(){
@@ -72,11 +94,10 @@ void heartRateDetection(){
     long delta = millis() - lastBeat;
     lastBeat = millis();
 
-    beatsPerMinute = 60 / (delta / 1000.0);
-
-    if (beatsPerMinute < 255 && beatsPerMinute > 20)
+    bpm = 60 / (delta / 1000.0);
+    if (bpm < 255 && bpm > 20)
     {
-      rates[rateSpot++] = (byte)beatsPerMinute; //Store this reading in the array
+      rates[rateSpot++] = (byte)bpm; //Store this reading in the array
       rateSpot %= RATE_SIZE; //Wrap variable
 
       //Take average of readings
@@ -86,19 +107,23 @@ void heartRateDetection(){
       beatAvg /= RATE_SIZE;
     }
   }
-
   Serial.print("IR=");
   Serial.print(irValue);
   Serial.print(", BPM=");
-  Serial.print(beatsPerMinute);
+  Serial.print(bpm);
   Serial.print(", Avg BPM=");
   Serial.print(beatAvg);
 
-  if (irValue < 50000)
+  if (irValue < 50000) {
     Serial.print(" No finger?");
-
+    return;
+  }
+  char payload[100];
+  snprintf(payload, sizeof(payload), "{\"BPM\": \"%s\"}", String(beatAvg).c_str());
+  mqttClient.publish("v1/devices/me/telemetry", payload);
   Serial.println();
 }
+
 // Temperature and humidity publish function
 void tempAndHumPublish(){
   tempAndHumSensor.UpdateData();
@@ -127,6 +152,7 @@ void loop() {
   }
   tempAndHumPublish();
   heartRateDetection();
+  // readBatVol();
 } 
 
 
