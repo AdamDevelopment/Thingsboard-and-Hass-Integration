@@ -4,8 +4,8 @@
 void wifiSetup();
 void mqttSetup();
 void maxSetup();
-void sp2oMeasurement();
-// void heartRateDetection();
 void tempAndHumPublish();
+void heartRateDetection();
+void spo2Measurement();
 
 #endif // FUNCTIONS_H

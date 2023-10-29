@@ -16,6 +16,6 @@ void loop()
     mqttSetup();
   }
   tempAndHumPublish();
-  // heartRateDetection();
-  sp2oMeasurement();
+  heartRateDetection();
+  spo2Measurement();
 }

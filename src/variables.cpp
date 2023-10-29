@@ -8,26 +8,26 @@ MAX30105 PulseAndSP2OSensor;
 const char *SSID = "Nie mam wi-fi";
 const char *PASSWORD = "makaronzpomidorami";
 const char *MQTT_SERVER = "thingsboardrpi.duckdns.org";
-const int MQTT_PORT = 1883;
+const int MQTT_PORT = 8883;
 const char *MQTT_TOKEN = "og3ms9bts9x8a9agm00c";
 const byte RATE_SIZE = 4; // Increase this for more averaging. 4 is good.
 
 // Global variables
-WiFiClient espClient;
+WiFiClientSecure espClient;
 PubSubClient mqttClient(espClient);
-// byte rates[RATE_SIZE]; // Array of heart rates
-// byte rateSpot = 0;
-// long lastBeat = 0; // Time at which the last beat occurred
-// float bpm;
-// int beatAvg;
+byte rates[RATE_SIZE]; // Array of heart rates
+byte rateSpot = 0;
+long lastBeat = 0; // Time at which the last beat occurred
+float bpm;
+int beatAvg;
 
 // sp2o variables
 #if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__)
-uint16_t irBuffer[100];  // infrared LED sensor data
-uint16_t redBuffer[100]; // red LED sensor data
+uint16_t irBuffer[50];  // infrared LED sensor data
+uint16_t redBuffer[50]; // red LED sensor data
 #else
-uint32_t irBuffer[100];  // infrared LED sensor data
-uint32_t redBuffer[100]; // red LED sensor data
+uint32_t irBuffer[50];  // infrared LED sensor data
+uint32_t redBuffer[50]; // red LED sensor data
 #endif
 
 // sp2o calculation variables

@@ -2,13 +2,14 @@
 #define VARIABLES_H
 
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include <SHT3x.h>
 #undef I2C_BUFFER_LENGTH
 #include "MAX30105.h"
 #include <Arduino.h>
 #include <Wire.h>
-// #include "heartRate.h"
+#include "heartRate.h"
 #include "spo2_algorithm.h"
 
 // Sensors addresses
@@ -24,23 +25,23 @@ extern const char *MQTT_TOKEN;
 extern const byte RATE_SIZE;
 
 // Global variables
-extern WiFiClient espClient;
+extern WiFiClientSecure espClient;
 extern PubSubClient mqttClient;
-// extern byte rates[];
-// extern byte rateSpot;
-// extern long lastBeat;
-// extern float bpm;
-// extern int beatAvg;
+extern byte rates[];
+extern byte rateSpot;
+extern long lastBeat;
+extern float bpm;
+extern int beatAvg;
 
 #define MAX_BRIGHTNESS 255
 
 // sp2o variables
 #if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__)
-extern uint16_t irBuffer[100];  // infrared LED sensor data
-extern uint16_t redBuffer[100]; // red LED sensor data
+extern uint16_t irBuffer[50];  // infrared LED sensor data
+extern uint16_t redBuffer[50]; // red LED sensor data
 #else
-extern uint32_t irBuffer[100];  // infrared LED sensor data
-extern uint32_t redBuffer[100]; // red LED sensor data
+extern uint32_t irBuffer[50];  // infrared LED sensor data
+extern uint32_t redBuffer[50]; // red LED sensor data
 #endif
 
 extern int32_t bufferLength;  // data length
