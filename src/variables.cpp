@@ -12,6 +12,12 @@ const int MQTT_PORT = 8883;
 const char *MQTT_TOKEN = "og3ms9bts9x8a9agm00c";
 const byte RATE_SIZE = 4; // Increase this for more averaging. 4 is good.
 
+// AD8232 variables
+const int LO_PLUS_PIN = 17;
+const int LO_MINUS_PIN = 16;
+const int ECG_PIN = 36;
+const int SDN = 4;
+
 // Global variables
 WiFiClientSecure espClient;
 PubSubClient mqttClient(espClient);

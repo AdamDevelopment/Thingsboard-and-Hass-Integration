@@ -23,6 +23,10 @@ extern const char *MQTT_SERVER;
 extern const int MQTT_PORT;
 extern const char *MQTT_TOKEN;
 extern const byte RATE_SIZE;
+extern const int LO_PLUS_PIN;
+extern const int LO_MINUS_PIN;
+extern const int ECG_PIN;
+extern const int SDN;
 
 // Global variables
 extern WiFiClientSecure espClient;

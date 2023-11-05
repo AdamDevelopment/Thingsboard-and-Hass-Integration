@@ -7,6 +7,7 @@ void setup()
   wifiSetup();
   mqttSetup();
   maxSetup();
+  ad8232Setup();
 }
 
 void loop()
@@ -18,4 +19,5 @@ void loop()
   tempAndHumPublish();
   heartRateDetection();
   spo2Measurement();
+  ad8232Publish();
 }

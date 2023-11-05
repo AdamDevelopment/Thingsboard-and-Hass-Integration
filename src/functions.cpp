@@ -53,6 +53,16 @@ void maxSetup()
   PulseAndSP2OSensor.setPulseAmplitudeGreen(0);                                                      // Turn off Green LED
 }
 
+// ad8232 setup function
+void ad8232Setup()
+{
+  pinMode(LO_PLUS_PIN, INPUT);
+  pinMode(LO_MINUS_PIN, INPUT);
+  pinMode(SDN, OUTPUT);
+  digitalWrite(SDN, HIGH);
+  analogReadResolution(12);
+}
+
 // Heart rate detection function
 void heartRateDetection()
 {
@@ -134,6 +144,10 @@ void spo2Measurement()
 
   // After gathering 25 new samples recalculate HR and SP02
   maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
+
+  char payload[100];
+  snprintf(payload, sizeof(payload), "{\"SPO2\": \"%s\"}", String(spo2).c_str());
+  mqttClient.publish("v1/devices/me/telemetry", payload);
 }
 
 // Temperature and humidity publish function
@@ -151,4 +165,22 @@ void tempAndHumPublish()
   Serial.println(temp);
   Serial.print("Humidity: ");
   Serial.println(hum);
+}
+
+// ad8232 publish function
+void ad8232Publish()
+{
+  if (digitalRead(LO_PLUS_PIN) == 1 || digitalRead(LO_MINUS_PIN) == 1)
+  {
+    Serial.println("Check the sensor connections.");
+  }
+  else
+  {
+    int ecgValue = analogRead(ECG_PIN);
+    Serial.println(ecgValue);
+    char payload[100];
+    snprintf(payload, sizeof(payload), "{\"ECG\": \"%s\"}", String(ecgValue).c_str());
+    mqttClient.publish("v1/devices/me/telemetry", payload);
+  }
+  delay(1);
 }
