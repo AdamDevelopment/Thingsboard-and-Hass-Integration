@@ -18,6 +18,11 @@ const int LO_MINUS_PIN = 16;
 const int ECG_PIN = 36;
 const int SDN = 4;
 
+// misscelanous variables
+const int IR_TRESHOLD = 50000;
+const unsigned long SPO2_WAIT_TIME = 4000;
+
+
 // Global variables
 WiFiClientSecure espClient;
 PubSubClient mqttClient(espClient);
@@ -27,10 +32,11 @@ long lastBeat = 0; // Time at which the last beat occurred
 float bpm;
 int beatAvg;
 
-// Define the state machine states
+// Define the state machine states(for spo2)
 Spo2MeasurementState spo2State = INIT;
 int sampleIndex = 0;
 unsigned long lastSampleTime = 0;
+
 // sp2o variables
 #if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__)
 uint16_t irBuffer[50];  // infrared LED sensor data

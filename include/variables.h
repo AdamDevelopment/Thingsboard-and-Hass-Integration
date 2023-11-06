@@ -37,6 +37,9 @@ extern long lastBeat;
 extern float bpm;
 extern int beatAvg;
 
+//misscelanous variables
+extern const int IR_TRESHOLD;
+extern const unsigned long SPO2_WAIT_TIME;
 // defining spo2 measurement states
 enum Spo2MeasurementState {
   INIT,
