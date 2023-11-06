@@ -94,93 +94,153 @@ void heartRateDetection()
   Serial.print(", Avg BPM=");
   Serial.print(beatAvg);
 
+  char payload[100];
   if (irValue < 50000)
   {
-    Serial.print(" No finger?");
-    Serial.println();
+    Serial.println("No finger?");
+    beatAvg = 0;
+    snprintf(payload, sizeof(payload), "{\"BPM\": \"%d\"}", 0);
+    if (!mqttClient.publish("v1/devices/me/telemetry", payload))
+    {
+      Serial.println("Failed to publish BPM with no finger detected.");
+    }
     return;
-  }
-  char payload[100];
-  snprintf(payload, sizeof(payload), "{\"BPM\": \"%s\"}", String(beatAvg).c_str());
-  mqttClient.publish("v1/devices/me/telemetry", payload);
-  Serial.println();
-}
-
-// spo2 measurement function
-void spo2Measurement()
-{
-  bufferLength = 50; // buffer length of 100 stores 4 seconds of samples running at 25sps
-  // read the first 100 samples, and determine the signal range
-  for (byte i = 0; i < bufferLength; i++)
-  {
-    redBuffer[i] = PulseAndSP2OSensor.getIR();
-    irBuffer[i] = PulseAndSP2OSensor.getRed();
-    PulseAndSP2OSensor.nextSample(); // We're finished with this sample so move to next sample
-  }
-  // calculate heart rate and SpO2 after first 100 samples (first 4 seconds of samples)
-  maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
-
-  // dumping the first 12 sets of samples in the memory and shift the last 75 sets of samples to the top
-  for (byte i = 12; i < 50; i++)
-  {
-    redBuffer[i - 12] = redBuffer[i];
-    irBuffer[i - 12] = irBuffer[i];
-  }
-  byte i = 38; // Declare i outside the loop for subsequent use
-  // take 12 sets of samples before calculating the heart rate.
-  for (; i < 50; i++)
-  {
-    while (PulseAndSP2OSensor.available() == false)
-      PulseAndSP2OSensor.check();
-    redBuffer[i] = PulseAndSP2OSensor.getIR();
-    irBuffer[i] = PulseAndSP2OSensor.getRed();
-    PulseAndSP2OSensor.nextSample();
-  }
-
-  // send samples and calculation result to terminal program through UART
-  Serial.print("SPO2=");
-  Serial.print(spo2, DEC);
-  Serial.println();
-
-  // After gathering 25 new samples recalculate HR and SP02
-  maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
-
-  char payload[100];
-  snprintf(payload, sizeof(payload), "{\"SPO2\": \"%s\"}", String(spo2).c_str());
-  mqttClient.publish("v1/devices/me/telemetry", payload);
-}
-
-// Temperature and humidity publish function
-void tempAndHumPublish()
-{
-  tempAndHumSensor.Begin();
-  tempAndHumSensor.UpdateData();
-  float temp = tempAndHumSensor.GetTemperature();
-  float hum = tempAndHumSensor.GetRelHumidity();
-
-  char payload[100];
-  snprintf(payload, sizeof(payload), "{\"temperature\": %.2f, \"humidity\": %.2f}", temp, hum);
-  mqttClient.publish("v1/devices/me/telemetry", payload);
-  Serial.print("Temperature: ");
-  Serial.println(temp);
-  Serial.print("Humidity: ");
-  Serial.println(hum);
-}
-
-// ad8232 publish function
-void ad8232Publish()
-{
-  if (digitalRead(LO_PLUS_PIN) == 1 || digitalRead(LO_MINUS_PIN) == 1)
-  {
-    Serial.println("Check the sensor connections.");
   }
   else
   {
-    int ecgValue = analogRead(ECG_PIN);
-    Serial.println(ecgValue);
-    char payload[100];
-    snprintf(payload, sizeof(payload), "{\"ECG\": \"%s\"}", String(ecgValue).c_str());
-    mqttClient.publish("v1/devices/me/telemetry", payload);
+    snprintf(payload, sizeof(payload), "{\"BPM\": \"%d\"}", beatAvg);
+    Serial.println();
+    if (!mqttClient.publish("v1/devices/me/telemetry", payload))
+    {
+      Serial.println("Failed to publish BPM.");
+    }
   }
-  delay(1);
 }
+  // Removed the redundant Serial.println() if it's not needed
+
+  // // spo2 measurement function
+  // void spo2Measurement()
+  // {
+  //   bufferLength = 50; // buffer length of 50 stores 4 seconds of samples running at 25sps
+  //   // read the first 50 samples, and determine the signal range
+  //   for (byte i = 0; i < bufferLength; i++)
+  //   {
+  //     redBuffer[i] = PulseAndSP2OSensor.getIR();
+  //     irBuffer[i] = PulseAndSP2OSensor.getRed();
+  //     PulseAndSP2OSensor.nextSample(); // We're finished with this sample so move to next sample
+  //   }
+  //   // calculate SpO2 after first 50 samples (first 4 seconds of samples)
+  //   maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
+
+  //   // dumping the first 12 sets of samples in the memory and shift the last 38 sets of samples to the top
+  //   for (byte i = 12; i < 50; i++)
+  //   {
+  //     redBuffer[i - 12] = redBuffer[i];
+  //     irBuffer[i - 12] = irBuffer[i];
+  //   }
+  //   byte i = 38; // Declare i outside the loop for subsequent use
+  //   // take 12 sets of samples before calculating the heart rate.
+  //   for (; i < 50; i++)
+  //   {
+  //     while (PulseAndSP2OSensor.available() == false)
+  //       PulseAndSP2OSensor.check();
+  //     redBuffer[i] = PulseAndSP2OSensor.getIR();
+  //     irBuffer[i] = PulseAndSP2OSensor.getRed();
+  //     PulseAndSP2OSensor.nextSample();
+  //   }
+
+  //   // print the SpO2 every 4 second
+  //   Serial.print("SPO2=");
+  //   Serial.print(spo2, DEC);
+  //   Serial.println();
+
+  //   // After gathering 25 new samples recalculate HR and SP02
+  //   maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
+
+  //   char payload[100];
+  //   snprintf(payload, sizeof(payload), "{\"SPO2\": \"%s\"}", String(spo2).c_str());
+  //   mqttClient.publish("v1/devices/me/telemetry", payload);
+  // }
+
+  // Temperature and humidity publish function
+  void tempAndHumPublish()
+  {
+    tempAndHumSensor.Begin();
+    tempAndHumSensor.UpdateData();
+    float temp = tempAndHumSensor.GetTemperature();
+    float hum = tempAndHumSensor.GetRelHumidity();
+
+    char payload[100];
+    snprintf(payload, sizeof(payload), "{\"temperature\": %.2f, \"humidity\": %.2f}", temp, hum);
+    mqttClient.publish("v1/devices/me/telemetry", payload);
+    Serial.print("Temperature: ");
+    Serial.println(temp);
+    Serial.print("Humidity: ");
+    Serial.println(hum);
+  }
+  // spo2 state machine function
+  void spo2Measurement()
+  {
+    unsigned long currentMillis = millis();
+
+    switch (spo2State)
+    {
+    case INIT:
+      bufferLength = 50; // initialize buffer length because variable 'n_ir_buffer_length' is used as divisor (0) in a library, and its causing "divide by zero" error
+      sampleIndex = 0;
+      lastSampleTime = currentMillis;
+      spo2State = COLLECTING;
+      break;
+    case COLLECTING:
+      if (sampleIndex < bufferLength)
+      {
+        if (PulseAndSP2OSensor.available())
+        {
+          redBuffer[sampleIndex] = PulseAndSP2OSensor.getIR();
+          irBuffer[sampleIndex] = PulseAndSP2OSensor.getRed();
+          PulseAndSP2OSensor.nextSample();
+          sampleIndex++;
+        }
+      }
+      else
+      {
+        spo2State = PROCESSING;
+      }
+      break;
+    case PROCESSING:
+      maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
+      char payload[100];
+      snprintf(payload, sizeof(payload), "{\"SPO2\": \"%d\"}", spo2);
+      mqttClient.publish("v1/devices/me/telemetry", payload);
+      Serial.print("SPO2=");
+      Serial.print(spo2, DEC);
+      Serial.println();
+      sampleIndex = 0;
+      lastSampleTime = currentMillis;
+      spo2State = WAITING;
+      break;
+    case WAITING:
+      if (currentMillis - lastSampleTime >= 4000)
+      {
+        spo2State = INIT;
+      }
+      break;
+    }
+  }
+  // ad8232 publish function
+  void ad8232Publish()
+  {
+    if (digitalRead(LO_PLUS_PIN) == 1 || digitalRead(LO_MINUS_PIN) == 1)
+    {
+      Serial.println("Check the sensor connections.");
+    }
+    else
+    {
+      int ecgValue = analogRead(ECG_PIN);
+      Serial.println(ecgValue);
+      char payload[100];
+      snprintf(payload, sizeof(payload), "{\"ECG\": \"%s\"}", String(ecgValue).c_str());
+      mqttClient.publish("v1/devices/me/telemetry", payload);
+    }
+    delay(1);
+  }

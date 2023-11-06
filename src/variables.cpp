@@ -27,6 +27,10 @@ long lastBeat = 0; // Time at which the last beat occurred
 float bpm;
 int beatAvg;
 
+// Define the state machine states
+Spo2MeasurementState spo2State = INIT;
+int sampleIndex = 0;
+unsigned long lastSampleTime = 0;
 // sp2o variables
 #if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__)
 uint16_t irBuffer[50];  // infrared LED sensor data

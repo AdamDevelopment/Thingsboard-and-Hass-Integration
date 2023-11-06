@@ -37,6 +37,19 @@ extern long lastBeat;
 extern float bpm;
 extern int beatAvg;
 
+// defining spo2 measurement states
+enum Spo2MeasurementState {
+  INIT,
+  COLLECTING,
+  PROCESSING,
+  WAITING
+};
+
+// spo2 state calculation variables
+extern Spo2MeasurementState spo2State;
+extern int sampleIndex;
+extern unsigned long lastSampleTime;
+
 #define MAX_BRIGHTNESS 255
 
 // sp2o variables
