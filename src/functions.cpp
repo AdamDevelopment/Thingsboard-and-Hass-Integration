@@ -135,7 +135,7 @@ void tempAndHumPublish()
 // spo2 state machine function
 void spo2Measurement()
 {
-  unsigned long currentMillis = millis(); //for constant loop speed(before it was 1000ms)
+  unsigned long currentMillis = millis(); // for constant loop speed(before it was 1000ms)
 
   switch (spo2State)
   {
@@ -164,11 +164,20 @@ void spo2Measurement()
   case PROCESSING:
     maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
     char payload[100];
-    snprintf(payload, sizeof(payload), "{\"SPO2\": \"%d\"}", spo2);
-    mqttClient.publish("v1/devices/me/telemetry", payload);
-    Serial.print("SPO2=");
-    Serial.print(spo2, DEC);
-    Serial.println();
+    if (validSPO2 && spo2 != -999)
+    {
+      snprintf(payload, sizeof(payload), "{\"SPO2\": \"%d\"}", spo2);
+      mqttClient.publish("v1/devices/me/telemetry", payload);
+      Serial.print("SPO2=");
+      Serial.print(spo2, DEC);
+      Serial.println();
+    }
+    else
+    {
+      Serial.println("No finger?");
+      snprintf(payload, sizeof(payload), "{\"SPO2\": \"%d\"}", 0);
+      mqttClient.publish("v1/devices/me/telemetry", payload);
+    }
     sampleIndex = 0;
     lastSampleTime = currentMillis;
     spo2State = WAITING;

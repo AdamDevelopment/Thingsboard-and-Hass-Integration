@@ -10,7 +10,7 @@ const char *PASSWORD = "makaronzpomidorami";
 const char *MQTT_SERVER = "thingsboardrpi.duckdns.org";
 const int MQTT_PORT = 8883;
 const char *MQTT_TOKEN = "og3ms9bts9x8a9agm00c";
-const byte RATE_SIZE = 4; // Increase this for more averaging. 4 is good.
+const byte RATE_SIZE = 5; // Increase this for more averaging. 4 is good.
 
 // AD8232 variables
 const int LO_PLUS_PIN = 17;

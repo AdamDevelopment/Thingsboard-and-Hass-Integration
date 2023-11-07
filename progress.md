@@ -12,7 +12,7 @@
 
 - SSL server's encryption</br>
 - OTA update</br>
-- Displaying 0% SpO2 instead of -999% on thingsboard UI, when finger is not detected/placed</br>
+- Displaying 0% SpO2 instead of -999% on thingsboard UI, when finger is not detected/placed **done**</br>
 - Create condition to calculate more average BPM in hearRateDetection() function to avoid BPM's spikes</br>
 - create script to translate JSON payload from thingsboard to one that Home Assistant understand</br>
 - If there's time, clean code creating struct, classes etc. (currently at 60-70% of flash memory, so code heavy af)</br>
