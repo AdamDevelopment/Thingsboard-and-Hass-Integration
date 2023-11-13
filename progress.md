@@ -8,13 +8,17 @@
 - Added esp exception decoder to platformio.ini under monitor_filters:</br>
 - Removed unnecessary libraries</br>
 
+# 12.11.2023
+
+-Created working home assistant container</br>
+
 # To-Do
 
 - SSL server's encryption</br>
 - OTA update via Thingsboard - **read more about it**</br>
 - Displaying 0% SpO2 instead of -999% on thingsboard UI, when finger is not detected/placed - **done**</br>
 - Create condition to calculate more average BPM in hearRateDetection() function to avoid BPM's spikes - **done**</br>
-- create script to translate JSON payload from thingsboard to one that Home Assistant understand</br>
+- !!!Create script to translate JSON payload from thingsboard to one that Home Assistant understand!!!</br>
 - If there's time, clean code creating struct, classes etc. (currently at 60-70% of flash memory, so code heavy af)</br>
 - After buying electrodes, check if AD8232's payload is making sense (displaying correct ECG function)</br>
 - Consider creating noise filters for better readings (AD8232 mostly)</br>
@@ -22,3 +26,5 @@
 - Measure how long will battery last under full load</br>
 - Create functions that will run for desired amount of time, and then going deep-sleep mode, to expand battery life</br>
 - Server's backup **done**</br>
+- **optional** enable/create automatic server backup</br>
+- Read about partitions on ESP32</br>
