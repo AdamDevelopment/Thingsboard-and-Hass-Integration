@@ -3,3 +3,6 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+python-script-json-decoder/main.py
+python-script-json-decoder/main2.py
+python-script-json-decoder/json-translation.py

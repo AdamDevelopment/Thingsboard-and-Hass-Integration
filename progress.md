@@ -12,9 +12,20 @@
 
 -Created working home assistant container</br>
 
+# 14.11.2023
+
+- Sucessfully extracted JSON data via python script from thingsboard</br>
+
+# 18.11.2023
+
+- Created ./python-script-json-decoder folder for python conversion script</br>
+- Created .env file to store all sensitive credentials</br>
+- Cleaned python code from sensitive data using variables from .env file</br>
+- Created timestamp conversion function, to convert ts values from sensors to readable format</br>
+
 # To-Do
 
-- SSL server's encryption</br>
+- SSL server's encryption **not needed**</br>
 - OTA update via Thingsboard - **read more about it**</br>
 - Displaying 0% SpO2 instead of -999% on thingsboard UI, when finger is not detected/placed - **done**</br>
 - Create condition to calculate more average BPM in hearRateDetection() function to avoid BPM's spikes - **done**</br>
