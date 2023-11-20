@@ -5,10 +5,15 @@ from dotenv import find_dotenv, load_dotenv
 import datetime
 
 # modify it to get ts from telemetry_response
-def ts_converter(ts):
-    return datetime.datetime.fromtimestamp(ts / 1000).strftime("%d/%m/%Y %H:%M:%S")
-
-
+def data_conv(telemetry_data):
+    for key in telemetry_data:
+        telemetry_data[key] = telemetry_data[key][0]
+    for key, sensors_data in telemetry_data.items():
+        if 'ts' and 'value' in sensors_data:
+            sensors_data['ts'] = datetime.datetime.fromtimestamp(sensors_data['ts'] / 1000).strftime("%d/%m/%Y %H:%M:%S")
+            sensors_data['value'] = float(sensors_data['value'])
+                
+    
 # defining a function for environmental variables
 def load_var():
     load_dotenv(find_dotenv())
@@ -24,10 +29,7 @@ def save_telemetry_to_json(telemetry_response, file_path):
     try:
         with open(file_path, 'w') as file:
             telemetry_data = telemetry_response.json()
-            for key, ts_value in telemetry_data.items():
-                for key in ts_value:
-                    if 'ts' in key:
-                        key['ts'] = ts_converter(key['ts'])
+            data_conv(telemetry_data)
             json.dump(telemetry_data, file, indent=2)
     except ValueError as e:
         print("Error saving telemetry data to JSON file:", e)

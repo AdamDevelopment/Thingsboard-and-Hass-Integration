@@ -23,6 +23,10 @@
 - Cleaned python code from sensitive data using variables from .env file</br>
 - Created timestamp conversion function, to convert ts values from sensors to readable format</br>
 
+# 20.11.2023
+
+- Updated ts_converter(data_conv now) by moving for loops from save_telemetry_to_json() function to data_conv</br>
+
 # To-Do
 
 - SSL server's encryption **not needed**</br>
