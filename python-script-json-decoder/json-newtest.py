@@ -3,6 +3,8 @@ import json
 import os
 from dotenv import find_dotenv, load_dotenv
 import datetime
+import paho.mqtt.client as mqtt
+
 
 # modify it to get ts from telemetry_response
 def data_conv(telemetry_data):
@@ -55,6 +57,28 @@ def telemetry(jwt_token, base_url, DEVICE_ID, FILE_PATH, session):
         except requests.RequestException as e:
             print("Error retrieving telemetry data:", e)
             break
+def mqtt_comm():
+# MQTT broker details
+    broker_address = "thingsboardrpi.duckdns.org"  # Replace with your MQTT broker address
+    broker_port = 1883  # or 8883 for TLS
+    topic = "homeassistant/sensor/my_sensor/state"  # Replace with your topic
+
+    # Sample data (modify as needed)
+    data = {
+        "temperature": 22.5,
+        "humidity": 45.7
+    }
+    json_data = json.dumps(data)
+
+    # Create MQTT client and connect to broker
+    client = mqtt.Client("MyClientID")  # Replace with a unique ID for your client
+    client.connect(broker_address, broker_port)
+
+    # Publish data
+    client.publish(topic, json_data)
+
+    # Disconnect
+    client.disconnect()
 
 def main():
     URL, API_AUTH, USERNAME, PASSWORD, DEVICE_ID, FILE_PATH = load_var()
