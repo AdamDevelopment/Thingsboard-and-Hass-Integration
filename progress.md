@@ -27,6 +27,10 @@
 
 - Updated ts_converter(data_conv now) by moving for loops from save_telemetry_to_json() function to data_conv</br>
 
+# 26.11.2023
+
+- Shortened function names</br>
+
 # To-Do
 
 - SSL server's encryption **not needed**</br>
@@ -43,3 +47,9 @@
 - Server's backup **done**</br>
 - **optional** enable/create automatic server backup</br>
 - Read about partitions on ESP32</br>
+
+# To-Do publishing data to Homeassistant
+
+- Correctly set up configuration.yaml in /mnt/c/homeassistant/configuration.yaml</br>
+- Correctly add MQTT external tile to Rule chain in Thingsboard and properly configure it</br>
+- Create test python function for sending example telemetry</br>
