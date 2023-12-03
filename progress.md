@@ -10,7 +10,7 @@
 
 # 12.11.2023
 
--Created working home assistant container</br>
+-Created working Home Assistant container</br>
 
 # 14.11.2023
 
@@ -31,13 +31,23 @@
 
 - Shortened function names</br>
 
+# 2.12.2023
+
+- Fixed postgreSQL (compeletly destroyed itself, idk why) and remove unnecessary tables from database</br>
+- Changed telementry storing from "never delete" to "7 days", to prevent from taking too much space by it </br>
+
+# 3.12.2023
+
+- added flag to hass-init alias (0.0.0.0:8123) to be able to connect to Docker container via VPN</br>
+- Successfully sent telemetry data to Home Assistant's Docker Container via REST API from Thingsboard Server (connected to both Thingsboard REST and Homeassistant REST API's)</br>
+
 # To-Do
 
 - SSL server's encryption **not needed**</br>
 - OTA update via Thingsboard - **read more about it**</br>
 - Displaying 0% SpO2 instead of -999% on thingsboard UI, when finger is not detected/placed - **done**</br>
 - Create condition to calculate more average BPM in hearRateDetection() function to avoid BPM's spikes - **done**</br>
-- !!!Create script to translate JSON payload from thingsboard to one that Home Assistant understand!!!</br>
+- !!!Create script to translate JSON payload from thingsboard to one that Home Assistant understand!!!**not needed**</br>
 - If there's time, clean code creating struct, classes etc. (currently at 60-70% of flash memory, so code heavy af)</br>
 - After buying electrodes, check if AD8232's payload is making sense (displaying correct ECG function)</br>
 - Consider creating noise filters for better readings (AD8232 mostly)</br>
@@ -47,9 +57,10 @@
 - Server's backup **done**</br>
 - **optional** enable/create automatic server backup</br>
 - Read about partitions on ESP32</br>
+- Create nginx server for Home Assistant, get duckdns domain and encrypt it using TLS provided by Let's Encrypt</br>
 
 # To-Do publishing data to Homeassistant
 
-- Correctly set up configuration.yaml in /mnt/c/homeassistant/configuration.yaml</br>
-- Correctly add MQTT external tile to Rule chain in Thingsboard and properly configure it</br>
-- Create test python function for sending example telemetry</br>
+- Correctly set up configuration.yaml in /mnt/c/homeassistant/configuration.yaml**done**</br>
+- Correctly add MQTT external tile to Rule chain in Thingsboard and properly configure it*not needed**</br>
+- Create test python function for sending example telemetry**done**</br>
