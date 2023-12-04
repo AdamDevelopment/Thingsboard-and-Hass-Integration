@@ -21,11 +21,11 @@
 - Created ./python-script-json-decoder folder for python conversion script</br>
 - Created .env file to store all sensitive credentials</br>
 - Cleaned python code from sensitive data using variables from .env file</br>
-- Created timestamp conversion function, to convert ts values from sensors to readable format</br>
+- Created timestamp conversion function, to convert ts values from sensors to readable format**deprecated**</br>
 
 # 20.11.2023
 
-- Updated ts_converter(data_conv now) by moving for loops from save_telemetry_to_json() function to data_conv</br>
+- Updated ts_converter(data_conv now) by moving for loops from save_telemetry_to_json() function to data_conv**deprecated**</br>
 
 # 26.11.2023
 
@@ -67,5 +67,5 @@
 # To-Do publishing data to Homeassistant
 
 - Correctly set up configuration.yaml in /mnt/c/homeassistant/configuration.yaml**done**</br>
-- Correctly add MQTT external tile to Rule chain in Thingsboard and properly configure it*not needed**</br>
+- Correctly add MQTT external tile to Rule chain in Thingsboard and properly configure it**not needed**</br>
 - Create test python function for sending example telemetry**done**</br>
