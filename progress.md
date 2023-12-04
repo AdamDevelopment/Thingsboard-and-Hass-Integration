@@ -41,6 +41,11 @@
 - added flag to hass-init alias (0.0.0.0:8123) to be able to connect to Docker container via VPN</br>
 - Successfully sent telemetry data to Home Assistant's Docker Container via REST API from Thingsboard Server (connected to both Thingsboard REST and Homeassistant REST API's)</br>
 
+# 4.12.2023
+
+- Switched from "if" to "match - case" statements in main loop for better code readability</br>
+- Created init.py to clean main code a little bit. Moved load_variables() and thingsboard_auth() functions for better readability and visible separation between initialization functions and main ones</br>
+
 # To-Do
 
 - SSL server's encryption **not needed**</br>
