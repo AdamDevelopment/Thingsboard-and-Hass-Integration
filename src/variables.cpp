@@ -5,13 +5,7 @@ SHT3x tempAndHumSensor(0x44);
 MAX30105 PulseAndSP2OSensor;
 
 // Global constants
-const char *SSID = "Nie mam wi-fi";
-const char *PASSWORD = "makaronzpomidorami";
-const char *MQTT_SERVER = "thingsboardrpi.duckdns.org";
-const int MQTT_PORT = 8883;
-const char *MQTT_TOKEN = "og3ms9bts9x8a9agm00c";
 const byte RATE_SIZE = 15; // Increase this for more averaging. 4 is good.
-
 // AD8232 variables
 const int LO_PLUS_PIN = 17;
 const int LO_MINUS_PIN = 16;
@@ -38,13 +32,8 @@ int sampleIndex = 0;
 unsigned long lastSampleTime = 0;
 
 // sp2o variables
-#if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__)
-uint16_t irBuffer[50];  // infrared LED sensor data
-uint16_t redBuffer[50]; // red LED sensor data
-#else
 uint32_t irBuffer[50];  // infrared LED sensor data
 uint32_t redBuffer[50]; // red LED sensor data
-#endif
 
 // sp2o calculation variables
 int32_t bufferLength;

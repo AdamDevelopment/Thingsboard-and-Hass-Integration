@@ -1,7 +1,6 @@
 #ifndef VARIABLES_H
 #define VARIABLES_H
 
-#include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include <SHT3x.h>
@@ -17,11 +16,6 @@ extern SHT3x tempAndHumSensor;
 extern MAX30105 PulseAndSP2OSensor;
 
 // Global constants
-extern const char *SSID;
-extern const char *PASSWORD;
-extern const char *MQTT_SERVER;
-extern const int MQTT_PORT;
-extern const char *MQTT_TOKEN;
 extern const byte RATE_SIZE;
 extern const int LO_PLUS_PIN;
 extern const int LO_MINUS_PIN;
@@ -37,11 +31,12 @@ extern long lastBeat;
 extern float bpm;
 extern int beatAvg;
 
-//misscelanous variables
+// misscelanous variables
 extern const int IR_TRESHOLD;
 extern const unsigned long SPO2_WAIT_TIME;
 // defining spo2 measurement states
-enum Spo2MeasurementState {
+enum Spo2MeasurementState
+{
   INIT,
   COLLECTING,
   PROCESSING,
@@ -56,13 +51,9 @@ extern unsigned long lastSampleTime;
 #define MAX_BRIGHTNESS 255
 
 // sp2o variables
-#if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__)
-extern uint16_t irBuffer[50];  // infrared LED sensor data
-extern uint16_t redBuffer[50]; // red LED sensor data
-#else
+
 extern uint32_t irBuffer[50];  // infrared LED sensor data
 extern uint32_t redBuffer[50]; // red LED sensor data
-#endif
 
 extern int32_t bufferLength;  // data length
 extern int32_t spo2;          // SPO2 value

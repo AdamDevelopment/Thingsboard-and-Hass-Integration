@@ -1,11 +1,21 @@
 #include "variables.h"
 #include "functions.h"
 #include "server_cert.h"
+#include "secrets.h"
+#include <cstring>
+// #include <math.h>
+// #include <BluetoothSerial.h>
+// #include <esp_bt.h>
+// #include <driver/adc.h>
+
+// BluetoothSerial SerialBT;
 
 void wifiSetup()
 {
+  const char *wifiSSID = WIFI_SSID;
+  const char *wifiPasswd = PASSWORD;
   espClient.setCACert(mqttserver_pem);
-  WiFi.begin(SSID, PASSWORD);
+  WiFi.begin(wifiSSID, wifiPasswd);
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(1000);
@@ -16,11 +26,14 @@ void wifiSetup()
 
 void mqttSetup()
 {
-  mqttClient.setServer(MQTT_SERVER, MQTT_PORT);
+  const char *mqttServer = MQTT_SERVER;
+  const int mqttPort = MQTT_PORT;
+  const char *mqttToken = MQTT_TOKEN;
+  mqttClient.setServer(mqttServer, mqttPort);
   while (!mqttClient.connected())
   {
     Serial.println("Connecting to MQTT...");
-    if (mqttClient.connect("ESP32", MQTT_TOKEN, NULL))
+    if (mqttClient.connect("ESP32", mqttToken, NULL))
     {
       Serial.println("Connected to MQTT");
     }
@@ -52,6 +65,69 @@ void maxSetup()
   PulseAndSP2OSensor.setPulseAmplitudeRed(0x0A);                                                     // Turn Red LED to low to indicate sensor is running
   PulseAndSP2OSensor.setPulseAmplitudeGreen(0);                                                      // Turn off Green LED
 }
+
+// Deep sleep mode functions
+// void manageDeepSleep(bool enterDeepSleep, unsigned long wakeTime, unsigned long sleepTime) {
+//     // Helper functions to enable and disable WiFi and Bluetooth
+//     auto disableWiFi = []() {
+//         adc_power_release();
+//         WiFi.disconnect(true);
+//         WiFi.mode(WIFI_OFF);
+//         Serial2.println("\nWiFi disconnected!");
+//     };
+
+//     auto disableBluetooth = []() {
+//         btStop();
+//         Serial2.println("\nBluetooth stop!");
+//     };
+
+//     auto enableWiFi = []() {
+//         adc_power_acquire();
+//         delay(200);
+//         WiFi.disconnect(false);
+//         WiFi.mode(WIFI_STA);
+//         delay(200);
+//         Serial2.println("START WIFI");
+//         while (WiFi.status() != WL_CONNECTED) {
+//             delay(500);
+//             Serial2.print(".");
+//         }
+//         Serial2.println("\nWiFi connected");
+//         Serial2.println("IP address: ");
+//         Serial2.println(WiFi.localIP());
+//     };
+
+//     auto setModemSleep = [&]() {
+//         disableWiFi();
+//         disableBluetooth();
+//         setCpuFrequencyMhz(40); // Use 80 MHz if 40 MHz is not supported
+//     };
+
+//     auto wakeModemSleep = [&]() {
+//         setCpuFrequencyMhz(240);
+//         enableWiFi();
+//     };
+
+//     if (enterDeepSleep) {
+//         // Enter deep sleep mode
+//         setModemSleep();
+//         Serial2.println("MODEM SLEEP ENABLED");
+//         esp_sleep_enable_timer_wakeup(pow(5, 10));
+//         esp_deep_sleep_start();
+//     } else {
+//         // Wake and sleep cycle
+//         unsigned long startLoop = millis();
+//         while (startLoop + wakeTime > millis()) {
+//             wakeModemSleep();
+//             Serial2.println("MODEM SLEEP DISABLED");
+//             delay(sleepTime);
+//             setModemSleep();
+//             Serial2.println("MODEM SLEEP ENABLED");
+//             esp_sleep_enable_timer_wakeup(sleepTime);
+//             esp_deep_sleep_start();
+//         }
+//     }
+// }
 
 // ad8232 setup function
 void ad8232Setup()
@@ -87,10 +163,7 @@ void heartRateDetection()
       beatAvg /= RATE_SIZE;
     }
   }
-  Serial.print("IR=");
-  Serial.print(irValue);
-  Serial.print(", BPM=");
-  Serial.print(bpm);
+
   Serial.print(", Avg BPM=");
   Serial.print(beatAvg);
 
@@ -126,11 +199,13 @@ void tempAndHumPublish()
 
   char payload[100];
   snprintf(payload, sizeof(payload), "{\"temperature\": %.2f, \"humidity\": %.2f}", temp, hum);
+
   mqttClient.publish("v1/devices/me/telemetry", payload);
   Serial.print("Temperature: ");
   Serial.println(temp);
   Serial.print("Humidity: ");
   Serial.println(hum);
+  Serial.println(strlen(payload));
 }
 // spo2 state machine function
 void spo2Measurement()

@@ -20,4 +20,5 @@ void loop()
   heartRateDetection();
   spo2Measurement();
   ad8232Publish();
+  // manageDeepSleep(false, 60 * 1000, 5 * 60 * 1000);
 }
