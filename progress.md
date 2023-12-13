@@ -46,6 +46,14 @@
 - Switched from "if" to "match - case" statements in main loop for better code readability</br>
 - Created init.py to clean main code a little bit. Moved load_variables() and thingsboard_auth() functions for better readability and visible separation between initialization functions and main ones</br>
 
+# 10.12.2023
+
+- Moved sensitive credentials to secrets.h</br>
+
+# 13.12.2023
+
+-Insterted code for DeepSleepMode on ESP32 but flash size is too big **in progress**</br>
+
 # To-Do
 
 - SSL server's encryption **not needed**</br>
