@@ -52,7 +52,11 @@
 
 # 13.12.2023
 
--Insterted code for DeepSleepMode on ESP32 but flash size is too big **in progress**</br>
+- Insterted code for DeepSleepMode on ESP32 but flash size is too big **in progress**</br>
+
+# 30.12.2023
+
+- Created script.py to add/list existing and new devices, and send telemetry to home assistant's endpoints of choice</br>
 
 # To-Do
 
@@ -60,20 +64,20 @@
 - OTA update via Thingsboard - **read more about it**</br>
 - Displaying 0% SpO2 instead of -999% on thingsboard UI, when finger is not detected/placed - **done**</br>
 - Create condition to calculate more average BPM in hearRateDetection() function to avoid BPM's spikes - **done**</br>
-- !!!Create script to translate JSON payload from thingsboard to one that Home Assistant understand!!!**not needed**</br>
+- !!!Create script to translate JSON payload from thingsboard to one that Home Assistant understand!!!- **not needed**</br>
 - If there's time, clean code creating struct, classes etc. (currently at 60-70% of flash memory, so code heavy af)</br>
 - After buying electrodes, check if AD8232's payload is making sense (displaying correct ECG function)</br>
 - Consider creating noise filters for better readings (AD8232 mostly)</br>
 - Somehow create a function to monitor battery voltage</br>
 - Measure how long will battery last under full load</br>
-- Create functions that will run for desired amount of time, and then going deep-sleep mode, to expand battery life</br>
-- Server's backup **done**</br>
+- Create functions that will run for desired amount of time, and then going deep-sleep mode, to expand battery life - **in progress**</br>
+- Server's backup - **done**</br>
 - **optional** enable/create automatic server backup</br>
 - Read about partitions on ESP32</br>
-- Create nginx server for Home Assistant, get duckdns domain and encrypt it using TLS provided by Let's Encrypt</br>
+- Create nginx server for Home Assistant, get duckdns domain and encrypt it using TLS provided by Let's Encrypt* **Not needed**</br>
 
 # To-Do publishing data to Homeassistant
 
-- Correctly set up configuration.yaml in /mnt/c/homeassistant/configuration.yaml**done**</br>
-- Correctly add MQTT external tile to Rule chain in Thingsboard and properly configure it**not needed**</br>
-- Create test python function for sending example telemetry**done**</br>
+- Correctly set up configuration.yaml in /mnt/c/homeassistant/configuration.yaml - **done**</br>
+- Correctly add MQTT external tile to Rule chain in Thingsboard and properly configure it - **not needed**</br>
+- Create test python function for sending example telemetry - **done**</br>

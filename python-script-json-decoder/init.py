@@ -8,7 +8,7 @@ def load_variables():
     API_AUTH = os.getenv("API_AUTH")
     USERNAME = os.getenv("LOGIN")
     PASSWORD = os.getenv("PASSWORD")
-    DEVICE_ID = os.getenv("DEVICE_ID")
+    DEVICE_ID = os.getenv("DEVICE_ID", "").split(",")
     HA_TOKEN = os.getenv("HA_TOKEN")
     HA_TEMP_URL = os.getenv("HA_TEMP_URL")
     HA_HUM_URL = os.getenv("HA_HUM_URL")

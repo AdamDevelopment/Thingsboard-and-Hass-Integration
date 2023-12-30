@@ -13,7 +13,7 @@ def telemetry(jwt_token, URL, DEVICE_ID, HA_TOKEN, HA_TEMP_URL, HA_HUM_URL, HA_B
     
     while True:
         try:
-            time.sleep(0.5)
+            time.sleep(0.1)
             tb_response = session.get(tb_url, headers=thingsboard_headers)
             tb_response.raise_for_status()
             tb_data = tb_response.json()

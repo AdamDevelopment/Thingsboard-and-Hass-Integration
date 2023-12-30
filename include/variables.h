@@ -15,6 +15,7 @@
 extern SHT3x tempAndHumSensor;
 extern MAX30105 PulseAndSP2OSensor;
 
+
 // Global constants
 extern const byte RATE_SIZE;
 extern const int LO_PLUS_PIN;
