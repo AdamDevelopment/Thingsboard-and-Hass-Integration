@@ -2,7 +2,9 @@
 #define VARIABLES_H
 
 #include <WiFiClientSecure.h>
-#include <PubSubClient.h>
+#include <PubSubClient.h>         //https://github.com/esp8266/Arduino
+#include <DNSServer.h>
+#include <WiFiManager.h>
 #include <SHT3x.h>
 #undef I2C_BUFFER_LENGTH
 #include "MAX30105.h"

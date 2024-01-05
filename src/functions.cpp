@@ -9,26 +9,33 @@
 // #include <driver/adc.h>
 
 // BluetoothSerial SerialBT;
-
-void wifiSetup()
+void WifiManagerSetup()
 {
-  const char *wifiSSID = WIFI_SSID;
-  const char *wifiPasswd = PASSWORD;
-  espClient.setCACert(mqttserver_pem);
-  WiFi.begin(wifiSSID, wifiPasswd);
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(1000);
-    Serial.println("Connecting to WiFi...");
-  }
+  WiFiManager wifiManager;
+  wifiManager.resetSettings();
+  wifiManager.autoConnect("AutoConnectAP");
   Serial.println("Connected to WiFi");
 }
+// void wifiSetup()
+// {
+//   const char *wifiSSID = WIFI_SSID;
+//   const char *wifiPasswd = PASSWORD;
+//   espClient.setCACert(mqttserver_pem);
+//   WiFi.begin(wifiSSID, wifiPasswd);
+//   while (WiFi.status() != WL_CONNECTED)
+//   {
+//     delay(1000);
+//     Serial.println("Connecting to WiFi...");
+//   }
+//   Serial.println("Connected to WiFi");
+// }
 
 void mqttSetup()
 {
   const char *mqttServer = MQTT_SERVER;
   const int mqttPort = MQTT_PORT;
   const char *mqttToken = MQTT_TOKEN;
+  espClient.setCACert(mqttserver_pem);
   mqttClient.setServer(mqttServer, mqttPort);
   while (!mqttClient.connected())
   {

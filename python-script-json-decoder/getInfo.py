@@ -11,7 +11,9 @@ def get_all_device_ids(jwt_token, URL, session):
         response.raise_for_status()
         devices = response.json()
         # Extract device IDs from the response
-        device_ids = [device['id']['id'] for device in devices['data']]
+        device_ids = []
+        for device_ids in devices:
+            device_ids = devices['data']
         return device_ids
     except requests.exceptions.HTTPError as e:
         print(f"HTTP error occurred: {e}")

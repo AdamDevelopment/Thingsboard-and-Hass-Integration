@@ -3,16 +3,21 @@ import json
 import time
 from init import load_variables, thingsboard_auth
 
-def get_all_device_ids(jwt_token, URL, session):
+def device_names(jwt_token, URL, session, print_output=True):
     thingsboard_headers = {'X-Authorization': f'Bearer {jwt_token}', 'Content-Type': 'application/json'}
-    devices_url = f"{URL}/api/tenant/devices?page=0&pageSize=100"  # Adjust pageSize as needed
+    devices_url = f"{URL}/api/tenant/devices?page=0&pageSize=100"
     try:
         response = session.get(devices_url, headers=thingsboard_headers)
         response.raise_for_status()
         devices = response.json()
-        # Extract device IDs from the response
-        device_ids = [device['id']['id'] for device in devices['data']]
-        return device_ids
+        devices_data = []
+        for device in devices['data']:
+            device_name = device.get('name')
+            device_id = device['id']['id']
+            devices_data.append((device_name, device_id))
+            if print_output:
+                print(device_name)
+        return devices_data
     except requests.exceptions.HTTPError as e:
         print(f"HTTP error occurred: {e}")
         print(f"Response content: {response.content}")
@@ -123,19 +128,17 @@ def main_menu():
 
 def choose_device(jwt_token, URL, session):
     print("\nAvailable Devices:")
-    device_ids = get_all_device_ids(jwt_token, URL, session)
-    device_names = []
-    for device_id in device_ids:
-        device_info = getInfo(jwt_token, URL, session, device_id)
-        device_name = device_info.get('name', 'Unknown') if device_info else 'Error fetching name'
-        device_names.append(device_name)
-        print(f"{device_names.index(device_name) + 1}. {device_name}")
+    devices_data = device_names(jwt_token, URL, session,print_output=False)
+    
+    for index, (name, _) in enumerate(devices_data, start=1):
+        print(f"{index}. {name}")
 
     choice = input("Choose a device to send telemetry to (enter the number): ")
     try:
         selected_index = int(choice) - 1
-        if 0 <= selected_index < len(device_names):
-            return device_ids[selected_index]
+        if 0 <= selected_index < len(devices_data):
+            _, selected_device_id = devices_data[selected_index]
+            return selected_device_id
         else:
             print("Invalid selection. Please try again.")
             return None
@@ -143,22 +146,7 @@ def choose_device(jwt_token, URL, session):
         print("Invalid input. Please enter a number.")
         return None
 
-
 def create_device(jwt_token, URL, session):
-    # # get device profiles
-    # thingsboard_headers = {'X-Authorization': f'Bearer {jwt_token}', 'Content-Type': 'application/json'}
-    # dev_prof_url = f"{URL}/api/deviceProfiles"
-    # try:
-    #     response = session.get(dev_prof_url, headers=thingsboard_headers)
-    #     response.raise_for_status()
-    #     dev_prof = response.json()
-    #     print("Profiles: ", dev_prof)
-    #     for profile in dev_prof:
-    #         print(f"- {profile.get('name')}")
-    # except requests.exceptions.HTTPError as e:
-    #     print(f"Error fetching device profiles: {e}")
-    #     return
-    
     # create device
     device_name = input("Enter the name of the new device: ")
     device_profile = input("Enter the profile of the new device: ")
@@ -182,10 +170,7 @@ def main():
         while True:
             choice = main_menu()
             if choice == '1':
-                device_ids = get_all_device_ids(jwt_token, URL, session)
-                for device_id in device_ids:
-                    device_data = getInfo(jwt_token, URL, session, device_id)
-                    print(device_data)
+                device_names(jwt_token, URL, session)
             elif choice == '2':
                 create_device(jwt_token, URL, session)
             elif choice == '3':

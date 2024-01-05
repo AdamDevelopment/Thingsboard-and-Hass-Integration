@@ -1,7 +1,8 @@
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
 
-void wifiSetup();
+void WifiManagerSetup();
+// void wifiSetup();
 void mqttSetup();
 void maxSetup();
 void ad8232Setup();

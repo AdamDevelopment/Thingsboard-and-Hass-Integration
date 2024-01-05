@@ -4,7 +4,8 @@
 void setup()
 {
   Serial.begin(115200);  
-  wifiSetup();
+  WifiManagerSetup();
+  // wifiSetup();
   mqttSetup();
   maxSetup();
   ad8232Setup();
@@ -12,6 +13,10 @@ void setup()
 
 void loop()
 {
+  if (!WiFi.status() == WL_CONNECTED)
+  {
+    WifiManagerSetup();
+  }
   if (!mqttClient.connected())
   {
     mqttSetup();
