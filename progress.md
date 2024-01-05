@@ -58,6 +58,10 @@
 
 - Created script.py to add/list existing and new devices, and send telemetry to home assistant's endpoints of choice</br>
 
+# 05.01.2024
+
+- Created WifiManagerSetup() for WifiManager AP and to allow ESP32 to connect to Wifi of user's choice. Also to create a possibility to use ESP32 with diffrent Wifi network, but still be able to send telemetry via MQTT</br>
+
 # To-Do
 
 - SSL server's encryption **not needed**</br>
