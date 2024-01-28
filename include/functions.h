@@ -10,5 +10,5 @@ void tempAndHumPublish();
 void heartRateDetection();
 void spo2Measurement();
 void ad8232Publish();
-// void manageDeepSleep(bool enterDeepSleep, unsigned long wakeTime = 5 * 60 * 1000, unsigned long sleepTime = 60 * 1000);
+void lightSleep();
 #endif // FUNCTIONS_H

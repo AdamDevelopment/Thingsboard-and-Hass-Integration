@@ -2,7 +2,7 @@
 #define VARIABLES_H
 
 #include <WiFiClientSecure.h>
-#include <PubSubClient.h>         //https://github.com/esp8266/Arduino
+#include <PubSubClient.h>         
 #include <DNSServer.h>
 #include <WiFiManager.h>
 #include <SHT3x.h>
@@ -17,6 +17,12 @@
 extern SHT3x tempAndHumSensor;
 extern MAX30105 PulseAndSP2OSensor;
 
+// Light sleep variables
+extern unsigned long lastMeasurementTime;
+extern unsigned long lastSleepTime;
+extern const unsigned long aqDuration;
+extern const unsigned long sleepDuration;
+extern bool sleepState;
 
 // Global constants
 extern const byte RATE_SIZE;
