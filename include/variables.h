@@ -12,10 +12,12 @@
 #include <Wire.h>
 #include "heartRate.h"
 #include "spo2_algorithm.h"
+#include "freertos/semphr.h"
+extern SemaphoreHandle_t xMutex;
 
 // Sensors addresses
 extern SHT3x tempAndHumSensor;
-extern MAX30105 PulseAndSP2OSensor;
+extern MAX30105 PulseAndOxygenSensor;
 
 // Light sleep variables
 extern unsigned long lastMeasurementTime;
@@ -43,26 +45,34 @@ extern int beatAvg;
 // misscelanous variables
 extern const int IR_TRESHOLD;
 extern const unsigned long SPO2_WAIT_TIME;
-// defining spo2 measurement states
-enum Spo2MeasurementState
-{
+
+
+// definiowanie stanów pomiaru
+enum  OXY_MEASURE_STATES {
   INIT,
-  COLLECTING,
-  PROCESSING,
-  WAITING
+  COLLECT,
+  PROCESS,
+  WAIT
+};
+
+enum AD_MEASURE_STATES {
+  INIT_AD,
+  READ_DATA,
+  PUBLISH,
+  WAIT_AD
 };
 
 // spo2 state calculation variables
-extern Spo2MeasurementState spo2State;
+extern OXY_MEASURE_STATES MAX30102_STATE;
+extern AD_MEASURE_STATES currState;
 extern int sampleIndex;
 extern unsigned long lastSampleTime;
 
 #define MAX_BRIGHTNESS 255
 
 // sp2o variables
-
-extern uint32_t irBuffer[50];  // infrared LED sensor data
-extern uint32_t redBuffer[50]; // red LED sensor data
+extern uint32_t irBuffer[100];  // infrared LED sensor data
+extern uint32_t redBuffer[100]; // red LED sensor data
 
 extern int32_t bufferLength;  // data length
 extern int32_t spo2;          // SPO2 value

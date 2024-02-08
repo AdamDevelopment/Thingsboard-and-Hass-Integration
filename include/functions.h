@@ -8,7 +8,7 @@ void maxSetup();
 void ad8232Setup();
 void tempAndHumPublish();
 void heartRateDetection();
-void spo2Measurement();
+void MAX30102_SPO2_MEASUREMENT();
 void ad8232Publish();
 void lightSleep();
 #endif // FUNCTIONS_H

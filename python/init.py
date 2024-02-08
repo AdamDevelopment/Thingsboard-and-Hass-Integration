@@ -5,6 +5,8 @@ from dotenv import load_dotenv, find_dotenv
 def load_variables():
     load_dotenv(find_dotenv())
     URL = os.getenv("URL")
+    USERNAME = os.getenv("USERNAME")
+    PASSWORD = os.getenv("PASSWORD")
     API_AUTH = os.getenv("API_AUTH")
     DEVICE_ID = os.getenv("DEVICE_ID", "").split(",")
     HA_TOKEN = os.getenv("HA_TOKEN")

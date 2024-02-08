@@ -156,12 +156,12 @@ def telemetry(jwt_token, URL, DEVICE_ID, HA_TOKEN, HA_TEMP_URL, HA_HUM_URL, HA_B
                         ha_bpm = requests.post(ha_bpm_url, headers=hass_headers, json=ha_bpm_data)
                         print("HA json:", ha_bpm.text)
                     case 'ECG':
-                        ECG = tb_data['BPM'][0]['value']
+                        ECG = tb_data['ECG'][0]['value']
                         ha_ecg_url = HA_ECG_URL
                         ha_ecg_data = {
                             "state": ECG,
                             "attributes": {
-                                "unit_of_measurement": "ms",
+                                "unit_of_measurement": "mV",
                                 "friendly_name": "Czujnik EKG"
                             }
                         }
@@ -184,6 +184,7 @@ def telemetry(jwt_token, URL, DEVICE_ID, HA_TOKEN, HA_TEMP_URL, HA_HUM_URL, HA_B
         except requests.RequestException as e:
             print("Error:", e)
             break
+        time.sleep(0.25)
 def stop_telemetry():
     global should_continue_telemetry
     should_continue_telemetry = False
