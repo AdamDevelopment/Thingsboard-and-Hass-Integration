@@ -1,14 +1,20 @@
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
 
+void saveConfigCallback();
 void WifiManagerSetup();
-// void wifiSetup();
+void saveConfigFile();
+bool loadConfigFile();
+void resetDeviceSettings();
+void formatLittleFSIfNeeded();
 void mqttSetup();
 void maxSetup();
 void ad8232Setup();
+void ad8232Publish();
 void tempAndHumPublish();
 void heartRateDetection();
 void MAX30102_SPO2_MEASUREMENT();
-void ad8232Publish();
 void lightSleep();
+void getTimeStamp();
+
 #endif // FUNCTIONS_H

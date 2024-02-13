@@ -1,8 +1,17 @@
 #include "variables.h"
-SemaphoreHandle_t xMutex = NULL;
 // Sensors adressess
 SHT3x tempAndHumSensor(0x44);
 MAX30105 PulseAndOxygenSensor;
+
+
+WiFiManager wifiManager;  
+
+
+const char* ntpServer1 = "pool.ntp.org";
+const char* ntpServer2 = "time.nist.gov";
+const long gmtOffset_sec = 3600;
+const int daylightOffset_sec = 3600;
+const char* time_zone = "CET-1CEST,M3.5.0,M10.5.0/3";
 
 // Global constants
 const byte RATE_SIZE = 15; // Increase this for more averaging. 4 is good.
@@ -15,6 +24,8 @@ const int SDN = 13;
 // misscelanous variables
 const int IR_TRESHOLD = 50000;
 
+SemaphoreHandle_t mutex;
+SemaphoreHandle_t ad8232mutex;
 
 // Global variables
 WiFiClientSecure espClient;
@@ -28,7 +39,8 @@ int beatAvg;
 // Obiekt inicjalizacji stanu wejściowego czujnika MAX30102
 OXY_MEASURE_STATES MAX30102_STATE = INIT;
 // Obiekt inicjalizacji stanu pomiaru
-AD_MEASURE_STATES currState = INIT_AD;
+// AD_MEASURE_STATES currState = INIT_AD;
+
 // Zmienna do przechowywania indeksu próbki
 int sampleIndex = 0;
 // Zmienna do przechowywania czasu ostatniej próbki

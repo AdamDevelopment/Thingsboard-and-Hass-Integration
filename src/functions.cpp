@@ -3,79 +3,219 @@
 #include "server_cert.h"
 #include "secrets.h"
 
-void lightSleep()
-{
-  uint32_t SLEEP_DURATION = 300000000;
-  Serial.println("Light Sleep mode activated");
-  delay(1000);
-  Serial.println("Going to sleep now");
-  esp_sleep_enable_timer_wakeup(SLEEP_DURATION);
-  esp_light_sleep_start();
-}
+char mqttServer[40] = "";
+char mqttPort[6] = "1883"; // MQTT port default
+char mqttToken[40] = "";
+char mqttDeviceName[40] = "";
+WiFiManagerParameter custom_mqtt_server("server", "MQTT Server Address", "", 40);
+WiFiManagerParameter custom_mqtt_port("port", "MQTT Port", "1883", 6);
+WiFiManagerParameter custom_mqtt_token("token", "MQTT Token", "", 20);
+WiFiManagerParameter custom_device_name("device", "Device Name", "", 20);
+bool shouldSaveConfig = false;
+int connectionAttempts = 0;
+const int maxConnectionAttempts = 1;
 
 void WifiManagerSetup()
 {
-  // Zdefiniowanie serwera głównego i tokenu urządzenia
-  // char mainServer[28] = MAIN_SERVER;
-  // char accToken[22] = ACCESS_TOKEN;
-  // // zainicjowanie obiektu klasy WiFiManager
-  WiFiManager wifiManager;
+  Serial.println("Starting WifiManagerSetup...");
+  wifiManager.setSaveConfigCallback(saveConfigCallback); // Ustaw callback jako pierwszą czynność
 
-  // // Deklaracja niestandardowych parametrów dla serwera i tokenu
-  // WiFiManagerParameter custom_server("server", "Server Address", "", 40);
-  // WiFiManagerParameter custom_token("token", "Device token", "", 40);
+  // wifiManager.resetSettings(); // Resetowanie ustawień WiFiManagera przed próbą połączenia
 
-  // Dodanie niestandardowych parametrów do WiFiManager
-  // wifiManager.addParameter(&custom_server);
-  // wifiManager.addParameter(&custom_token);
+  wifiManager.setConfigPortalTimeout(180);
+  wifiManager.addParameter(&custom_mqtt_server);
+  wifiManager.addParameter(&custom_mqtt_port);
+  wifiManager.addParameter(&custom_mqtt_token);
+  wifiManager.addParameter(&custom_device_name);
 
-  // resetowanie ustawień (opcjonalne)
-  // wifiManager.resetSettings();
-
-  // Stworzenie punktu dostępowego
-  wifiManager.autoConnect("Opaska pomiarowa");
-  // Serial.println(custom_server.getValue());
-  // Serial.println(custom_token.getValue());
-  // // Sprawdzenie, czy wprowadzony serwer i token są zgodne z oczekiwanymi wartościami
-  // if (strcmp(custom_server.getValue(), mainServer) != 0 || strcmp(custom_token.getValue(), accToken) != 0)
-  // {
-  //   Serial.println("Błędne dane. Resetowanie punktu dostępowego...");
-  //   ESP.restart(); // Zrestartuj Punkt Dostępowy
-  // }else{
-  //   Serial.println("Połączono");
-  // }
-}
-
-void mqttSetup()
-{
-  // Zdefiniowanie zmiennych protkołu MQTT (adres, port, token)
-  const char *mqttServer = MQTT_SERVER;
-  const int mqttPort = MQTT_PORT;
-  const char *mqttToken = MQTT_TOKEN;
-  const char *mqttDeviceName = MQTT_DEVICE_NAME;
-  // Ustawienie zabezpieczenia TLS dla klienta MQTT (opcjonalne)
-  espClient.setCACert(mqttserver_pem);
-  // Ustawienie serwera i portu MQTT
-  mqttClient.setServer(mqttServer, mqttPort);
-  // Sprawdzenie połączenia z serwerem MQTT
-  while (!mqttClient.connected())
+  if (!wifiManager.autoConnect("AutoConnectAP"))
   {
-    Serial.println("Łączenie z serwerem MQTT...");
-    // Łączenie z serwerem MQTT
-    if (mqttClient.connect(MQTT_DEVICE_NAME, mqttToken, NULL))
+    Serial.println("Failed to connect and hit timeout");
+    ESP.restart(); // Resetuje urządzenie, jeśli nie udało się połączyć
+  }
+  else
+  {
+    Serial.println("Connected to wifi");
+    strcpy(mqttServer, custom_mqtt_server.getValue());
+    strcpy(mqttPort, custom_mqtt_port.getValue());
+    strcpy(mqttToken, custom_mqtt_token.getValue());
+    strcpy(mqttDeviceName, custom_device_name.getValue());
+    if (shouldSaveConfig)
     {
-      Serial.println("Połączono");
+      Serial.println("Saving config because shouldSaveConfig is true");
+      saveConfigFile();
     }
     else
     {
-      Serial.print("Połączenie nieudane, kod błędu=");
-      // Wyświetlenie kodu błędu (-1, -2, -3, -4, -5)
-      Serial.print(mqttClient.state());
-      delay(5000);
+      Serial.println("Not saving config because shouldSaveConfig is false");
+    }
+  }
+}
+void mqttSetup()
+{
+  Serial.println("Setting up MQTT...");
+  espClient.setCACert(mqttserver_pem);
+  mqttClient.setServer(mqttServer, atoi(mqttPort));
+
+  if (!mqttClient.connected())
+  {
+    Serial.println("Próba połączenia z MQTT...");
+    if (mqttClient.connect(mqttDeviceName, mqttToken, NULL))
+    {
+      Serial.println("Połączono z serwerem MQTT!");
+      connectionAttempts = 0;
+    }
+    else
+    {
+      Serial.print("Nie udało się połączyć z MQTT. Stan: ");
+      Serial.println(mqttClient.state());
+      connectionAttempts++;
+      if (connectionAttempts >= maxConnectionAttempts)
+      {
+        Serial.println("Przekroczono maksymalną liczbę prób połączenia z MQTT, resetowanie...");
+        resetDeviceSettings();
+      }
     }
   }
 }
 
+void saveConfigCallback()
+{
+  Serial.println("Zapisywanie konfiguracji...");
+  shouldSaveConfig = true;
+}
+
+void saveConfigFile()
+{
+  Serial.println(F("Saving configuration..."));
+  StaticJsonDocument<512> json;
+  json["mqttServer"] = mqttServer;
+  json["mqttPort"] = mqttPort;
+  json["mqttToken"] = mqttToken;
+  json["mqttDeviceName"] = mqttDeviceName;
+
+  serializeJsonPretty(json, Serial); // Wypisanie konfiguracji do konsoli przed zapisaniem
+
+  File configFile = LittleFS.open("/test_config.json", "w");
+  if (!configFile)
+  {
+    Serial.println("Failed to open config file for writing");
+    return;
+  }
+
+  if (serializeJson(json, configFile) == 0)
+  {
+    Serial.println(F("Failed to write to file"));
+  }
+  else
+  {
+    Serial.println("Config saved successfully");
+  }
+  configFile.close();
+}
+
+bool loadConfigFile()
+{
+  Serial.println("Mounting File System...");
+  if (!LittleFS.begin())
+  {
+    Serial.println("Failed to mount FS");
+    return false;
+  }
+
+  if (LittleFS.exists(JSON_CONFIG_FILE))
+  {
+    File configFile = LittleFS.open(JSON_CONFIG_FILE, "r");
+    if (!configFile)
+    {
+      Serial.println("Failed to open config file");
+      return false;
+    }
+
+    StaticJsonDocument<512> json;
+    DeserializationError error = deserializeJson(json, configFile);
+    if (error)
+    {
+      Serial.println("Failed to read file, using default configuration");
+      return false;
+    }
+
+    strlcpy(mqttServer, json["mqttServer"], sizeof(mqttServer));
+    strlcpy(mqttPort, json["mqttPort"], sizeof(mqttPort));
+    strlcpy(mqttToken, json["mqttToken"], sizeof(mqttToken));
+    strlcpy(mqttDeviceName, json["mqttDeviceName"], sizeof(mqttDeviceName));
+  }
+  return true;
+}
+void resetDeviceSettings()
+{
+  Serial.println("Resetowanie ustawień urządzenia...");
+
+  wifiManager.resetSettings(); // Reset ustawień WiFi
+  delay(1000);                 // Krótkie opóźnienie
+
+  if (LittleFS.begin())
+  {
+    Serial.println("Formatowanie LittleFS...");
+    LittleFS.format();
+    Serial.println("LittleFS sformatowany.");
+    LittleFS.end();
+  }
+
+  ESP.restart(); // Restart urządzenia
+}
+
+void formatLittleFSIfNeeded()
+{
+  if (!LittleFS.begin())
+  {
+    Serial.println("Montowanie LittleFS nieudane. Formatowanie...");
+    LittleFS.format();
+    LittleFS.begin();
+  }
+
+  File flagFile = LittleFS.open("/initFlag.txt", "r");
+  if (!flagFile)
+  {
+    Serial.println("Pierwsze uruchomienie, zapisywanie flagi...");
+    flagFile = LittleFS.open("/initFlag.txt", "w");
+    flagFile.println("initialized");
+    flagFile.close();
+  }
+  else
+  {
+    Serial.println("LittleFS już zainicjalizowany.");
+    flagFile.close();
+  }
+}
+
+void tempAndHumPublish()
+{
+  tempAndHumSensor.Begin();
+  tempAndHumSensor.UpdateData();
+  float temp = tempAndHumSensor.GetTemperature();
+  char payload[100];
+  Serial.print("Temperature: ");
+  Serial.println(temp);
+  snprintf(payload, sizeof(payload), "{\"temperature\": %.2f}", temp);
+  mqttClient.publish("v1/devices/me/telemetry", payload);
+}
+void getTimeStamp()
+{
+  struct timeval now;
+  gettimeofday(&now, NULL);
+  long long timestamp = (now.tv_sec * 1000LL + now.tv_usec / 1000); // Znacznik czasu w milisekundach.
+  int randomVal = random(0, 100);                                   // Generowanie losowej wartości.
+  char payload[256];                                                // Bufor na ciąg JSON, odpowiednio duży.
+
+  // Formatowanie ciągu JSON zgodnie z dokumentacją ThingsBoard.
+  // Wartości liczbowe nie są otoczone cudzysłowami.
+  snprintf(payload, sizeof(payload), "{\"ts\":%lld,\"values\":{\"testVal\":%d}}", timestamp, randomVal);
+
+  // Wysyłanie danych telemetrycznych do ThingsBoard.
+  Serial.printf("Payload: %s\n", payload);
+  mqttClient.publish("v1/devices/me/telemetry", payload);
+}
 void maxSetup()
 {
   Serial.println("Inicjalizacja sensora");
@@ -99,13 +239,13 @@ void maxSetup()
 }
 
 // ad8232 setup function
-void ad8232Setup()
-{
-  pinMode(LO_PLUS_PIN, INPUT);
-  pinMode(LO_MINUS_PIN, INPUT);
-  pinMode(SDN, OUTPUT);
-  digitalWrite(SDN, HIGH);
-}
+// void ad8232Setup()
+// {
+//   pinMode(LO_PLUS_PIN, INPUT);
+//   pinMode(LO_MINUS_PIN, INPUT);
+//   pinMode(SDN, OUTPUT);
+//   digitalWrite(SDN, HIGH);
+// }
 
 // Heart rate detection function
 void heartRateDetection()
@@ -136,125 +276,135 @@ void heartRateDetection()
   Serial.print("Avg BPM=");
   Serial.print(beatAvg);
 
-  char payload[100];
+  char telemetryPayload[100];
+  char attributesPayload[50];
   if (irValue < IR_TRESHOLD)
   {
     Serial.println(" No finger?");
     beatAvg = 0;
-    snprintf(payload, sizeof(payload), "{\"BPM\": \"%d\"}", 0);
-    if (!mqttClient.publish("v1/devices/me/telemetry", payload))
+    snprintf(telemetryPayload, sizeof(telemetryPayload), "{\"BPM\": \"%d\"}", 0);
+    if (!mqttClient.publish("v1/devices/me/telemetry", telemetryPayload))
     {
       Serial.println("Telemetry publish failed due to no finger");
     }
-    return;
+    // Opublikuj atrybut 'value' jako false, ponieważ nie wykryto palca
+    snprintf(attributesPayload, sizeof(attributesPayload), "{\"value\":false}");
+    if (!mqttClient.publish("v1/devices/me/attributes", attributesPayload))
+    {
+      Serial.println("Attributes publish failed due to no finger");
+    }
   }
   else
   {
-    snprintf(payload, sizeof(payload), "{\"BPM\": \"%d\"}", beatAvg);
+    snprintf(telemetryPayload, sizeof(telemetryPayload), "{\"BPM\": \"%d\"}", beatAvg);
     Serial.println();
-    if (!mqttClient.publish("v1/devices/me/telemetry", payload))
+    if (!mqttClient.publish("v1/devices/me/telemetry", telemetryPayload))
     {
       Serial.println("Telemetry publish failed");
     }
+    // Opublikuj atrybut 'value' jako true, ponieważ wykryto prawidłowy pomiar
+    snprintf(attributesPayload, sizeof(attributesPayload), "{\"value\":true}");
+    if (!mqttClient.publish("v1/devices/me/attributes", attributesPayload))
+    {
+      Serial.println("Attributes publish failed");
+    }
   }
 }
 
-void tempAndHumPublish()
-{
+// void lightSleep()
+// {
+//   uint32_t SLEEP_DURATION = 300000000;
+//   Serial.println("Light Sleep mode activated");
+//   delay(1000);
+//   Serial.println("Going to sleep now");
+//   esp_sleep_enable_timer_wakeup(SLEEP_DURATION);
+//   esp_light_sleep_start();
+// }
 
-  tempAndHumSensor.Begin();
-  tempAndHumSensor.UpdateData();
-  float temp = tempAndHumSensor.GetTemperature();
+// void MAX30102_SPO2_MEASUREMENT()
+// {
 
-  char payload[100];
-  snprintf(payload, sizeof(payload), "{\"temperature\": %.2f}", temp);
+//   // Zdefiniowanie zmiennej czasu w celu zachowania ciągłości pomiaru
+//   unsigned long currentTime = millis(); // Pobiera aktualny czas w milisekundach od startu programu
 
-  mqttClient.publish("v1/devices/me/telemetry", payload);
-  Serial.print("Temperature: ");
-  Serial.println(temp);
-}
+//   switch (MAX30102_STATE) // Rozpoczęcie obsługi stanów pomiaru czujnika MAX30102
+//   {
+//   case INIT:                      // Stan inicjalizacji: przygotowanie do nowego cyklu pomiarowego
+//     bufferLength = 100;           // Ustawienie długości bufora na 100 próbek
+//     sampleIndex = 0;              // Zerowanie indeksu próbek, start od początku
+//     lastSampleTime = currentTime; // Zapisanie bieżącego czasu jako punkt odniesienia
+//     MAX30102_STATE = COLLECT;     // Przejście do stanu zbierania danych
+//     break;
+//   case COLLECT:                     // Stan zbierania danych: odczyt wartości z czujnika
+//     if (sampleIndex < bufferLength) // Sprawdzenie, czy bufor nie jest pełny
+//     {
+//       if (PulseAndOxygenSensor.available()) // Sprawdzenie, czy czujnik ma dostępną nową próbkę
+//       {
+//         redBuffer[sampleIndex] = PulseAndOxygenSensor.getIR(); // Zapisanie wartości diory IR do bufora
+//         irBuffer[sampleIndex] = PulseAndOxygenSensor.getRed(); // Zapisanie wartości z diody czerwonej do bufora
+//         PulseAndOxygenSensor.nextSample();                     // Przygotowanie do odczytu kolejnej próbki
+//         sampleIndex++;                                         // Inkrementacja indeksu próbki
+//       }
+//     }
+//     else // Jeśli bufor jest pełny
+//     {
+//       MAX30102_STATE = PROCESS; // Przejście w stan przetwarzania danych
+//     }
+//     break;
+//   case PROCESS: // Stan przetwarzania danych: obliczanie SpO2 i tętna
+//     // Inicjalizacja zmiennych potrzebnych do obliczeń
+//     maxim_heart_rate_and_oxygen_saturation(irBuffer,
+//                                            bufferLength,
+//                                            redBuffer,
+//                                            &spo2,
+//                                            &validSPO2,
+//                                            &heartRate,
+//                                            &validHeartRate);
+//     char payload[100];            // Przygotowanie paczki danych do wysłania na serwer
+//     Serial.print("Heart Rate: "); // Wyświetlenie wartości tętna
+//     Serial.println(payload);
+//     if (validSPO2 && spo2 != -999) // Sprawdzenie, czy pomiar SpO2 jest ważny
+//     {
+//       snprintf(payload, sizeof(payload), "{\"SPO2\": \"%d\"}", spo2); // Formatowanie danych SpO2 do wysłania na serwer
+//       mqttClient.publish("v1/devices/me/telemetry", payload);         // Publikowanie danych SpO2
+//       Serial.print("SPO2=");                                          // Wyświetlenie wartości SpO2
+//       Serial.print(spo2, DEC);
+//       Serial.println();
+//     }
+//     else // Jeśli nie wykryto palca
+//     {
+//       Serial.println("Nie wykryto palca");                         // Informacja o braku palca
+//       snprintf(payload, sizeof(payload), "{\"SPO2\": \"%d\"}", 0); // Wysyłanie wartości 0 jako SpO2
+//       mqttClient.publish("v1/devices/me/telemetry", payload);      // Publikowanie danych
+//     }
+//     sampleIndex = 0;              // Resetowanie indeksu próbki dla kolejnego cyklu
+//     lastSampleTime = currentTime; // Aktualizacja czasu ostatniej próbki
+//     MAX30102_STATE = WAIT;        // Przejście w stan oczekiwania
+//     break;
+//   case WAIT:                                            // Stan oczekiwania
+//     if (currentTime - lastSampleTime >= SPO2_WAIT_TIME) // Sprawdzenie, czy upłynął wymagany czas oczekiwania (4000ms)
+//     {
+//       MAX30102_STATE = INIT; // Powrót do stanu inicjalizacji w celu rozpoczęcia nowego cyklu pomiarowego
+//     }
+//     break;
+//   }
+// }
 
-void MAX30102_SPO2_MEASUREMENT()
-{
+// void ad8232Publish()
+// {
 
-  // Zdefiniowanie zmiennej czasu w celu zachowania ciągłości pomiaru
-  unsigned long currentTime = millis(); // Pobiera aktualny czas w milisekundach od startu programu
+//   if (digitalRead(LO_PLUS_PIN) == 1 || digitalRead(LO_MINUS_PIN) == 1)
+//   {
+//     Serial.println("Check the sensor connections.");
+//   }
+//   else
+//   {
+//     Serial.print("ECG: ");
+//     Serial.println(analogRead(ECG_PIN));
+//     char payload[100];
 
-  switch (MAX30102_STATE) // Rozpoczęcie obsługi stanów pomiaru czujnika MAX30102
-  {
-  case INIT:                      // Stan inicjalizacji: przygotowanie do nowego cyklu pomiarowego
-    bufferLength = 100;           // Ustawienie długości bufora na 100 próbek
-    sampleIndex = 0;              // Zerowanie indeksu próbek, start od początku
-    lastSampleTime = currentTime; // Zapisanie bieżącego czasu jako punkt odniesienia
-    MAX30102_STATE = COLLECT;     // Przejście do stanu zbierania danych
-    break;
-  case COLLECT:                     // Stan zbierania danych: odczyt wartości z czujnika
-    if (sampleIndex < bufferLength) // Sprawdzenie, czy bufor nie jest pełny
-    {
-      if (PulseAndOxygenSensor.available()) // Sprawdzenie, czy czujnik ma dostępną nową próbkę
-      {
-        redBuffer[sampleIndex] = PulseAndOxygenSensor.getIR(); // Zapisanie wartości diory IR do bufora
-        irBuffer[sampleIndex] = PulseAndOxygenSensor.getRed(); // Zapisanie wartości z diody czerwonej do bufora
-        PulseAndOxygenSensor.nextSample();                     // Przygotowanie do odczytu kolejnej próbki
-        sampleIndex++;                                         // Inkrementacja indeksu próbki
-      }
-    }
-    else // Jeśli bufor jest pełny
-    {
-      MAX30102_STATE = PROCESS; // Przejście w stan przetwarzania danych
-    }
-    break;
-  case PROCESS: // Stan przetwarzania danych: obliczanie SpO2 i tętna
-    // Inicjalizacja zmiennych potrzebnych do obliczeń
-    maxim_heart_rate_and_oxygen_saturation(irBuffer,
-                                           bufferLength,
-                                           redBuffer,
-                                           &spo2,
-                                           &validSPO2,
-                                           &heartRate,
-                                           &validHeartRate);
-    char payload[100];             // Przygotowanie paczki danych do wysłania na serwer
-    if (validSPO2 && spo2 != -999) // Sprawdzenie, czy pomiar SpO2 jest ważny
-    {
-      snprintf(payload, sizeof(payload), "{\"SPO2\": \"%d\"}", spo2); // Formatowanie danych SpO2 do wysłania na serwer
-      mqttClient.publish("v1/devices/me/telemetry", payload);         // Publikowanie danych SpO2
-      Serial.print("SPO2=");                                          // Wyświetlenie wartości SpO2
-      Serial.print(spo2, DEC);
-      Serial.println();
-    }
-    else // Jeśli nie wykryto palca
-    {
-      Serial.println("Nie wykryto palca");                         // Informacja o braku palca
-      snprintf(payload, sizeof(payload), "{\"SPO2\": \"%d\"}", 0); // Wysyłanie wartości 0 jako SpO2
-      mqttClient.publish("v1/devices/me/telemetry", payload);      // Publikowanie danych
-    }
-    sampleIndex = 0;              // Resetowanie indeksu próbki dla kolejnego cyklu
-    lastSampleTime = currentTime; // Aktualizacja czasu ostatniej próbki
-    MAX30102_STATE = WAIT;        // Przejście w stan oczekiwania
-    break;
-  case WAIT:                                            // Stan oczekiwania
-    if (currentTime - lastSampleTime >= SPO2_WAIT_TIME) // Sprawdzenie, czy upłynął wymagany czas oczekiwania (4000ms)
-    {
-      MAX30102_STATE = INIT; // Powrót do stanu inicjalizacji w celu rozpoczęcia nowego cyklu pomiarowego
-    }
-    break;
-  }
-}
-
-void ad8232Publish()
-{
-
-  if (digitalRead(LO_PLUS_PIN) == 1 || digitalRead(LO_MINUS_PIN) == 1)
-  {
-    Serial.println("Check the sensor connections.");
-  }
-  else
-  {
-    Serial.print("ECG: ");
-    Serial.println(analogRead(ECG_PIN));
-    char payload[100];
-    snprintf(payload, sizeof(payload), "{\"ECG\": %d}", analogRead(ECG_PIN));
-    mqttClient.publish("v1/devices/me/telemetry", payload);
-  }
-  delay(1);
-}
+//     snprintf(payload, sizeof(payload), "{\"ECG\": %d}", analogRead(ECG_PIN));
+//     mqttClient.publish("v1/devices/me/telemetry", payload);
+//   }
+//   vTaskDelay(pdMS_TO_TICKS(1));
+// }

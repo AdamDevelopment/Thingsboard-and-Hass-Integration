@@ -1,6 +1,8 @@
 #ifndef VARIABLES_H
 #define VARIABLES_H
-
+#include <FS.h>
+#include <LittleFS.h>
+#include <ArduinoJson.h>
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>         
 #include <DNSServer.h>
@@ -12,8 +14,22 @@
 #include <Wire.h>
 #include "heartRate.h"
 #include "spo2_algorithm.h"
+#include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-extern SemaphoreHandle_t xMutex;
+#include "time.h"
+#include "esp_sntp.h"
+#define JSON_CONFIG_FILE "/test_config.json"
+
+
+extern const char* ntpServer1;
+extern const char* ntpServer2;
+extern const long gmtOffset_sec;
+extern const int daylightOffset_sec;
+extern const char* time_zone;
+
+// mutexes
+extern SemaphoreHandle_t mutex;
+extern SemaphoreHandle_t ad8232mutex;
 
 // Sensors addresses
 extern SHT3x tempAndHumSensor;
@@ -36,6 +52,7 @@ extern const int SDN;
 // Global variables
 extern WiFiClientSecure espClient;
 extern PubSubClient mqttClient;
+extern WiFiManager wifiManager;
 extern byte rates[];
 extern byte rateSpot;
 extern long lastBeat;
@@ -55,18 +72,10 @@ enum  OXY_MEASURE_STATES {
   WAIT
 };
 
-enum AD_MEASURE_STATES {
-  INIT_AD,
-  READ_DATA,
-  PUBLISH,
-  WAIT_AD
-};
-
 // spo2 state calculation variables
 extern OXY_MEASURE_STATES MAX30102_STATE;
-extern AD_MEASURE_STATES currState;
-extern int sampleIndex;
-extern unsigned long lastSampleTime;
+// extern AD_MEASURE_STATES currState;
+
 
 #define MAX_BRIGHTNESS 255
 
@@ -79,6 +88,8 @@ extern int32_t spo2;          // SPO2 value
 extern int8_t validSPO2;      // indicator to show if the SPO2 calculation is valid
 extern int32_t heartRate;     // heart rate value
 extern int8_t validHeartRate; // indicator to show if the heart rate calculation is valid
+extern int sampleIndex;
+extern unsigned long lastSampleTime;
 
 // sp2o setup variables
 extern byte ledBrightness; // Options: 0=Off to 255=50mA
