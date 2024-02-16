@@ -165,30 +165,6 @@ void resetDeviceSettings()
   ESP.restart(); // Restart urządzenia
 }
 
-void formatLittleFSIfNeeded()
-{
-  if (!LittleFS.begin())
-  {
-    Serial.println("Montowanie LittleFS nieudane. Formatowanie...");
-    LittleFS.format();
-    LittleFS.begin();
-  }
-
-  File flagFile = LittleFS.open("/initFlag.txt", "r");
-  if (!flagFile)
-  {
-    Serial.println("Pierwsze uruchomienie, zapisywanie flagi...");
-    flagFile = LittleFS.open("/initFlag.txt", "w");
-    flagFile.println("initialized");
-    flagFile.close();
-  }
-  else
-  {
-    Serial.println("LittleFS już zainicjalizowany.");
-    flagFile.close();
-  }
-}
-
 void tempAndHumPublish()
 {
   tempAndHumSensor.Begin();
@@ -200,22 +176,22 @@ void tempAndHumPublish()
   snprintf(payload, sizeof(payload), "{\"temperature\": %.2f}", temp);
   mqttClient.publish("v1/devices/me/telemetry", payload);
 }
-void getTimeStamp()
-{
-  struct timeval now;
-  gettimeofday(&now, NULL);
-  long long timestamp = (now.tv_sec * 1000LL + now.tv_usec / 1000); // Znacznik czasu w milisekundach.
-  int randomVal = random(0, 100);                                   // Generowanie losowej wartości.
-  char payload[256];                                                // Bufor na ciąg JSON, odpowiednio duży.
+// void getTimeStamp()
+// {
+//   struct timeval now;
+//   gettimeofday(&now, NULL);
+//   long long timestamp = (now.tv_sec * 1000LL + now.tv_usec / 1000); // Znacznik czasu w milisekundach.
+//   int randomVal = random(0, 100);                                   // Generowanie losowej wartości.
+//   char payload[256];                                                // Bufor na ciąg JSON, odpowiednio duży.
 
-  // Formatowanie ciągu JSON zgodnie z dokumentacją ThingsBoard.
-  // Wartości liczbowe nie są otoczone cudzysłowami.
-  snprintf(payload, sizeof(payload), "{\"ts\":%lld,\"values\":{\"testVal\":%d}}", timestamp, randomVal);
+//   // Formatowanie ciągu JSON zgodnie z dokumentacją ThingsBoard.
+//   // Wartości liczbowe nie są otoczone cudzysłowami.
+//   snprintf(payload, sizeof(payload), "{\"ts\":%lld,\"values\":{\"testVal\":%d}}", timestamp, randomVal);
 
-  // Wysyłanie danych telemetrycznych do ThingsBoard.
-  Serial.printf("Payload: %s\n", payload);
-  mqttClient.publish("v1/devices/me/telemetry", payload);
-}
+//   // Wysyłanie danych telemetrycznych do ThingsBoard.
+//   Serial.printf("Payload: %s\n", payload);
+//   mqttClient.publish("v1/devices/me/telemetry", payload);
+// }
 void maxSetup()
 {
   Serial.println("Inicjalizacja sensora");
@@ -321,74 +297,75 @@ void heartRateDetection()
 //   esp_light_sleep_start();
 // }
 
-// void MAX30102_SPO2_MEASUREMENT()
-// {
+void MAX30102_SPO2_MEASUREMENT(int32_t& spo2Ref)
+{
 
-//   // Zdefiniowanie zmiennej czasu w celu zachowania ciągłości pomiaru
-//   unsigned long currentTime = millis(); // Pobiera aktualny czas w milisekundach od startu programu
+  // Zdefiniowanie zmiennej czasu w celu zachowania ciągłości pomiaru
+  unsigned long currentTime = millis(); // Pobiera aktualny czas w milisekundach od startu programu
 
-//   switch (MAX30102_STATE) // Rozpoczęcie obsługi stanów pomiaru czujnika MAX30102
-//   {
-//   case INIT:                      // Stan inicjalizacji: przygotowanie do nowego cyklu pomiarowego
-//     bufferLength = 100;           // Ustawienie długości bufora na 100 próbek
-//     sampleIndex = 0;              // Zerowanie indeksu próbek, start od początku
-//     lastSampleTime = currentTime; // Zapisanie bieżącego czasu jako punkt odniesienia
-//     MAX30102_STATE = COLLECT;     // Przejście do stanu zbierania danych
-//     break;
-//   case COLLECT:                     // Stan zbierania danych: odczyt wartości z czujnika
-//     if (sampleIndex < bufferLength) // Sprawdzenie, czy bufor nie jest pełny
-//     {
-//       if (PulseAndOxygenSensor.available()) // Sprawdzenie, czy czujnik ma dostępną nową próbkę
-//       {
-//         redBuffer[sampleIndex] = PulseAndOxygenSensor.getIR(); // Zapisanie wartości diory IR do bufora
-//         irBuffer[sampleIndex] = PulseAndOxygenSensor.getRed(); // Zapisanie wartości z diody czerwonej do bufora
-//         PulseAndOxygenSensor.nextSample();                     // Przygotowanie do odczytu kolejnej próbki
-//         sampleIndex++;                                         // Inkrementacja indeksu próbki
-//       }
-//     }
-//     else // Jeśli bufor jest pełny
-//     {
-//       MAX30102_STATE = PROCESS; // Przejście w stan przetwarzania danych
-//     }
-//     break;
-//   case PROCESS: // Stan przetwarzania danych: obliczanie SpO2 i tętna
-//     // Inicjalizacja zmiennych potrzebnych do obliczeń
-//     maxim_heart_rate_and_oxygen_saturation(irBuffer,
-//                                            bufferLength,
-//                                            redBuffer,
-//                                            &spo2,
-//                                            &validSPO2,
-//                                            &heartRate,
-//                                            &validHeartRate);
-//     char payload[100];            // Przygotowanie paczki danych do wysłania na serwer
-//     Serial.print("Heart Rate: "); // Wyświetlenie wartości tętna
-//     Serial.println(payload);
-//     if (validSPO2 && spo2 != -999) // Sprawdzenie, czy pomiar SpO2 jest ważny
-//     {
-//       snprintf(payload, sizeof(payload), "{\"SPO2\": \"%d\"}", spo2); // Formatowanie danych SpO2 do wysłania na serwer
-//       mqttClient.publish("v1/devices/me/telemetry", payload);         // Publikowanie danych SpO2
-//       Serial.print("SPO2=");                                          // Wyświetlenie wartości SpO2
-//       Serial.print(spo2, DEC);
-//       Serial.println();
-//     }
-//     else // Jeśli nie wykryto palca
-//     {
-//       Serial.println("Nie wykryto palca");                         // Informacja o braku palca
-//       snprintf(payload, sizeof(payload), "{\"SPO2\": \"%d\"}", 0); // Wysyłanie wartości 0 jako SpO2
-//       mqttClient.publish("v1/devices/me/telemetry", payload);      // Publikowanie danych
-//     }
-//     sampleIndex = 0;              // Resetowanie indeksu próbki dla kolejnego cyklu
-//     lastSampleTime = currentTime; // Aktualizacja czasu ostatniej próbki
-//     MAX30102_STATE = WAIT;        // Przejście w stan oczekiwania
-//     break;
-//   case WAIT:                                            // Stan oczekiwania
-//     if (currentTime - lastSampleTime >= SPO2_WAIT_TIME) // Sprawdzenie, czy upłynął wymagany czas oczekiwania (4000ms)
-//     {
-//       MAX30102_STATE = INIT; // Powrót do stanu inicjalizacji w celu rozpoczęcia nowego cyklu pomiarowego
-//     }
-//     break;
-//   }
-// }
+  switch (MAX30102_STATE) // Rozpoczęcie obsługi stanów pomiaru czujnika MAX30102
+  {
+  case INIT:                      // Stan inicjalizacji: przygotowanie do nowego cyklu pomiarowego
+    bufferLength = 100;           // Ustawienie długości bufora na 100 próbek
+    sampleIndex = 0;              // Zerowanie indeksu próbek, start od początku
+    lastSampleTime = currentTime; // Zapisanie bieżącego czasu jako punkt odniesienia
+    MAX30102_STATE = COLLECT;     // Przejście do stanu zbierania danych
+    break;
+  case COLLECT:                     // Stan zbierania danych: odczyt wartości z czujnika
+    if (sampleIndex < bufferLength) // Sprawdzenie, czy bufor nie jest pełny
+    {
+      if (PulseAndOxygenSensor.available()) // Sprawdzenie, czy czujnik ma dostępną nową próbkę
+      {
+        redBuffer[sampleIndex] = PulseAndOxygenSensor.getIR(); // Zapisanie wartości diory IR do bufora
+        irBuffer[sampleIndex] = PulseAndOxygenSensor.getRed(); // Zapisanie wartości z diody czerwonej do bufora
+        PulseAndOxygenSensor.nextSample();                     // Przygotowanie do odczytu kolejnej próbki
+        sampleIndex++;                                         // Inkrementacja indeksu próbki
+      }
+    }
+    else // Jeśli bufor jest pełny
+    {
+      MAX30102_STATE = PROCESS; // Przejście w stan przetwarzania danych
+    }
+    break;
+  case PROCESS: // Stan przetwarzania danych: obliczanie SpO2 i tętna
+    // Inicjalizacja zmiennych potrzebnych do obliczeń
+    maxim_heart_rate_and_oxygen_saturation(irBuffer,
+                                           bufferLength,
+                                           redBuffer,
+                                           &spo2,
+                                           &validSPO2,
+                                           &heartRate,
+                                           &validHeartRate);
+    char payload[100];            // Przygotowanie paczki danych do wysłania na serwer
+    Serial.print("Heart Rate: "); // Wyświetlenie wartości tętna
+    Serial.println(payload);
+    if (validSPO2 && spo2 != -999) // Sprawdzenie, czy pomiar SpO2 jest ważny
+    {
+      spo2Ref = spo2;
+      snprintf(payload, sizeof(payload), "{\"SPO2\": \"%d\"}", spo2); // Formatowanie danych SpO2 do wysłania na serwer
+      mqttClient.publish("v1/devices/me/telemetry", payload);         // Publikowanie danych SpO2
+      Serial.print("SPO2=");                                          // Wyświetlenie wartości SpO2
+      Serial.print(spo2, DEC);
+      Serial.println();
+    }
+    else // Jeśli nie wykryto palca
+    {
+      Serial.println("Nie wykryto palca");                         // Informacja o braku palca
+      snprintf(payload, sizeof(payload), "{\"SPO2\": \"%d\"}", 0); // Wysyłanie wartości 0 jako SpO2
+      mqttClient.publish("v1/devices/me/telemetry", payload);      // Publikowanie danych
+    }
+    sampleIndex = 0;              // Resetowanie indeksu próbki dla kolejnego cyklu
+    lastSampleTime = currentTime; // Aktualizacja czasu ostatniej próbki
+    MAX30102_STATE = WAIT;        // Przejście w stan oczekiwania
+    break;
+  case WAIT:                                            // Stan oczekiwania
+    if (currentTime - lastSampleTime >= SPO2_WAIT_TIME) // Sprawdzenie, czy upłynął wymagany czas oczekiwania (4000ms)
+    {
+      MAX30102_STATE = INIT; // Powrót do stanu inicjalizacji w celu rozpoczęcia nowego cyklu pomiarowego
+    }
+    break;
+  }
+}
 
 // void ad8232Publish()
 // {
@@ -408,3 +385,25 @@ void heartRateDetection()
 //   }
 //   vTaskDelay(pdMS_TO_TICKS(1));
 // }
+
+
+void publishAllSensorsData(int32_t& spo2ref) {
+  struct timeval now;
+  gettimeofday(&now, NULL);
+  long long timestamp = (now.tv_sec * 1000LL + now.tv_usec / 1000); // Znacznik czasu w milisekundach.
+
+  // Pobieranie danych z sensorów
+  float temp = tempAndHumSensor.GetTemperature();
+  int32_t spo2_value = spo2ref;
+  int heartRate = beatAvg; // Używając zmiennej beatAvg z funkcji heartRateDetection
+  
+  // Konstrukcja payloadu z danymi z sensorów
+  char payload[256];
+  snprintf(payload, sizeof(payload), "{\"ts\":%lld,\"values\":{\"temperature\":%.2f, \"IR\":%ld, \"heartRate\":%d}}", timestamp, temp, spo2_value, heartRate);
+  
+  Serial.println(payload); // Debug
+  mqttClient.publish("v1/devices/me/telemetry", payload);
+}
+
+// getTimeStamp();
+// ad8232Publish();

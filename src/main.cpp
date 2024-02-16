@@ -28,11 +28,13 @@
 //   vTaskDelay(pdMS_TO_TICKS(10));
 // }
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
 
   // Inicjalizacja LittleFS
-  if (!LittleFS.begin()) {
+  if (!LittleFS.begin())
+  {
     Serial.println("Failed to mount LittleFS, formatting...");
     LittleFS.format();
     Serial.println("LittleFS formatted");
@@ -41,7 +43,8 @@ void setup() {
 
   Serial.println("Mounting File System...");
 
-  if (!loadConfigFile()) {
+  if (!loadConfigFile())
+  {
     Serial.println("No configuration file found or failed to load, launching WiFi setup");
   }
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer1, ntpServer2);
@@ -70,6 +73,10 @@ void setup() {
 
 void loop()
 {
+  if (!WL_CONNECTED) {
+    Serial.println("WiFi not connected");
+    resetDeviceSettings();
+  }
   getTimeStamp();
   tempAndHumPublish();
   heartRateDetection();

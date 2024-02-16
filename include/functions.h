@@ -6,7 +6,6 @@ void WifiManagerSetup();
 void saveConfigFile();
 bool loadConfigFile();
 void resetDeviceSettings();
-void formatLittleFSIfNeeded();
 void mqttSetup();
 void maxSetup();
 void ad8232Setup();
