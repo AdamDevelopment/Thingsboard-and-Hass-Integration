@@ -4,7 +4,7 @@
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include <WiFiClientSecure.h>
-#include <PubSubClient.h>         
+#include <PubSubClient.h>
 #include <DNSServer.h>
 #include <WiFiManager.h>
 #include <SHT3x.h>
@@ -20,16 +20,16 @@
 #include "esp_sntp.h"
 #define JSON_CONFIG_FILE "/test_config.json"
 
-
-extern const char* ntpServer1;
-extern const char* ntpServer2;
+extern const char *ntpServer1;
+extern const char *ntpServer2;
 extern const long gmtOffset_sec;
 extern const int daylightOffset_sec;
-extern const char* time_zone;
+extern const char *time_zone;
 
 // mutexes
 extern SemaphoreHandle_t mutex;
-extern SemaphoreHandle_t ad8232mutex;
+extern SemaphoreHandle_t publishMutex;
+extern SemaphoreHandle_t publishMutexAD; // Dodatkowy semafor dla AD8232
 
 // Sensors addresses
 extern SHT3x tempAndHumSensor;
@@ -48,6 +48,7 @@ extern const int LO_PLUS_PIN;
 extern const int LO_MINUS_PIN;
 extern const int ECG_PIN;
 extern const int SDN;
+extern int ecg_value;
 
 // Global variables
 extern WiFiClientSecure espClient;
@@ -63,9 +64,9 @@ extern int beatAvg;
 extern const int IR_TRESHOLD;
 extern const unsigned long SPO2_WAIT_TIME;
 
-
 // definiowanie stanów pomiaru
-enum  OXY_MEASURE_STATES {
+enum OXY_MEASURE_STATES
+{
   INIT,
   COLLECT,
   PROCESS,
@@ -75,7 +76,6 @@ enum  OXY_MEASURE_STATES {
 // spo2 state calculation variables
 extern OXY_MEASURE_STATES MAX30102_STATE;
 // extern AD_MEASURE_STATES currState;
-
 
 #define MAX_BRIGHTNESS 255
 

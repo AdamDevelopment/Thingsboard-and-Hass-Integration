@@ -14,18 +14,20 @@ const int daylightOffset_sec = 3600;
 const char* time_zone = "CET-1CEST,M3.5.0,M10.5.0/3";
 
 // Global constants
-const byte RATE_SIZE = 15; // Increase this for more averaging. 4 is good.
+const byte RATE_SIZE = 4; // Increase this for more averaging. 4 is good.
 // AD8232 variables
 const int LO_PLUS_PIN = 17;
 const int LO_MINUS_PIN = 16;
 const int ECG_PIN = A0;
 const int SDN = 13;
+int ecg_value;
 
 // misscelanous variables
 const int IR_TRESHOLD = 50000;
 
 SemaphoreHandle_t mutex;
-SemaphoreHandle_t ad8232mutex;
+SemaphoreHandle_t publishMutex;
+SemaphoreHandle_t publishMutexAD; 
 
 // Global variables
 WiFiClientSecure espClient;
@@ -35,12 +37,8 @@ byte rateSpot = 0;
 long lastBeat = 0; // Time at which the last beat occurred
 float bpm;
 int beatAvg;
-
 // Obiekt inicjalizacji stanu wejściowego czujnika MAX30102
 OXY_MEASURE_STATES MAX30102_STATE = INIT;
-// Obiekt inicjalizacji stanu pomiaru
-// AD_MEASURE_STATES currState = INIT_AD;
-
 // Zmienna do przechowywania indeksu próbki
 int sampleIndex = 0;
 // Zmienna do przechowywania czasu ostatniej próbki
@@ -58,6 +56,7 @@ int32_t spo2;
 int8_t validSPO2;
 int32_t heartRate;
 int8_t validHeartRate;
+
 
 // zmienne inicjalizacyjne dla MAX30102
 byte ledBrightness = 60; 
