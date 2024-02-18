@@ -6,13 +6,14 @@ void WifiManagerSetup();
 void saveConfigFile();
 bool loadConfigFile();
 void resetDeviceSettings();
+void publishAllSensorsData();
 void mqttSetup();
 void maxSetup();
 void ad8232Setup();
 void ad8232Publish();
-void tempAndHumPublish();
-void heartRateDetection();
-void MAX30102_SPO2_MEASUREMENT();
+float tempAndHumPublish();
+int heartRateDetection();
+int32_t MAX30102_SPO2_MEASUREMENT();
 void lightSleep();
 void getTimeStamp();
 

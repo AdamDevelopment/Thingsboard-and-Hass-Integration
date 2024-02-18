@@ -78,13 +78,11 @@ void mqttSetup()
     }
   }
 }
-
 void saveConfigCallback()
 {
   Serial.println("Zapisywanie konfiguracji...");
   shouldSaveConfig = true;
 }
-
 void saveConfigFile()
 {
   Serial.println(F("Saving configuration..."));
@@ -165,7 +163,7 @@ void resetDeviceSettings()
   ESP.restart(); // Restart urządzenia
 }
 
-void tempAndHumPublish()
+float tempAndHumPublish()
 {
   tempAndHumSensor.Begin();
   tempAndHumSensor.UpdateData();
@@ -173,8 +171,9 @@ void tempAndHumPublish()
   char payload[100];
   Serial.print("Temperature: ");
   Serial.println(temp);
-  snprintf(payload, sizeof(payload), "{\"temperature\": %.2f}", temp);
-  mqttClient.publish("v1/devices/me/telemetry", payload);
+  // snprintf(payload, sizeof(payload), "{\"temperature\": %.2f}", temp);
+  // mqttClient.publish("v1/devices/me/telemetry", payload);
+  return temp;
 }
 // void getTimeStamp()
 // {
@@ -224,7 +223,7 @@ void maxSetup()
 // }
 
 // Heart rate detection function
-void heartRateDetection()
+int heartRateDetection()
 {
 
   long irValue = PulseAndOxygenSensor.getIR();
@@ -247,22 +246,16 @@ void heartRateDetection()
         beatAvg += rates[x];
       beatAvg /= RATE_SIZE;
     }
+    return beatAvg;
   }
 
   Serial.print("Avg BPM=");
   Serial.print(beatAvg);
-
-  char telemetryPayload[100];
   char attributesPayload[50];
   if (irValue < IR_TRESHOLD)
   {
     Serial.println(" No finger?");
     beatAvg = 0;
-    snprintf(telemetryPayload, sizeof(telemetryPayload), "{\"BPM\": \"%d\"}", 0);
-    if (!mqttClient.publish("v1/devices/me/telemetry", telemetryPayload))
-    {
-      Serial.println("Telemetry publish failed due to no finger");
-    }
     // Opublikuj atrybut 'value' jako false, ponieważ nie wykryto palca
     snprintf(attributesPayload, sizeof(attributesPayload), "{\"value\":false}");
     if (!mqttClient.publish("v1/devices/me/attributes", attributesPayload))
@@ -272,12 +265,6 @@ void heartRateDetection()
   }
   else
   {
-    snprintf(telemetryPayload, sizeof(telemetryPayload), "{\"BPM\": \"%d\"}", beatAvg);
-    Serial.println();
-    if (!mqttClient.publish("v1/devices/me/telemetry", telemetryPayload))
-    {
-      Serial.println("Telemetry publish failed");
-    }
     // Opublikuj atrybut 'value' jako true, ponieważ wykryto prawidłowy pomiar
     snprintf(attributesPayload, sizeof(attributesPayload), "{\"value\":true}");
     if (!mqttClient.publish("v1/devices/me/attributes", attributesPayload))
@@ -285,6 +272,7 @@ void heartRateDetection()
       Serial.println("Attributes publish failed");
     }
   }
+  return beatAvg;
 }
 
 // void lightSleep()
@@ -297,7 +285,7 @@ void heartRateDetection()
 //   esp_light_sleep_start();
 // }
 
-void MAX30102_SPO2_MEASUREMENT(int32_t& spo2Ref)
+int32_t MAX30102_SPO2_MEASUREMENT()
 {
 
   // Zdefiniowanie zmiennej czasu w celu zachowania ciągłości pomiaru
@@ -336,23 +324,16 @@ void MAX30102_SPO2_MEASUREMENT(int32_t& spo2Ref)
                                            &validSPO2,
                                            &heartRate,
                                            &validHeartRate);
-    char payload[100];            // Przygotowanie paczki danych do wysłania na serwer
     Serial.print("Heart Rate: "); // Wyświetlenie wartości tętna
-    Serial.println(payload);
     if (validSPO2 && spo2 != -999) // Sprawdzenie, czy pomiar SpO2 jest ważny
     {
-      spo2Ref = spo2;
-      snprintf(payload, sizeof(payload), "{\"SPO2\": \"%d\"}", spo2); // Formatowanie danych SpO2 do wysłania na serwer
-      mqttClient.publish("v1/devices/me/telemetry", payload);         // Publikowanie danych SpO2
-      Serial.print("SPO2=");                                          // Wyświetlenie wartości SpO2
-      Serial.print(spo2, DEC);
-      Serial.println();
+      Serial.print("SpO2: "); // Wyświetlenie wartości SpO2
+      Serial.println(spo2);
     }
     else // Jeśli nie wykryto palca
     {
-      Serial.println("Nie wykryto palca");                         // Informacja o braku palca
-      snprintf(payload, sizeof(payload), "{\"SPO2\": \"%d\"}", 0); // Wysyłanie wartości 0 jako SpO2
-      mqttClient.publish("v1/devices/me/telemetry", payload);      // Publikowanie danych
+      spo2 = 0; // Przypisanie wartości 0 do zmiennej SpO2
+      Serial.println("Nie wykryto palca"); // Informacja o braku palca
     }
     sampleIndex = 0;              // Resetowanie indeksu próbki dla kolejnego cyklu
     lastSampleTime = currentTime; // Aktualizacja czasu ostatniej próbki
@@ -365,6 +346,7 @@ void MAX30102_SPO2_MEASUREMENT(int32_t& spo2Ref)
     }
     break;
   }
+  return spo2;
 }
 
 // void ad8232Publish()
@@ -386,21 +368,23 @@ void MAX30102_SPO2_MEASUREMENT(int32_t& spo2Ref)
 //   vTaskDelay(pdMS_TO_TICKS(1));
 // }
 
-
-void publishAllSensorsData(int32_t& spo2ref) {
+void publishAllSensorsData()
+{
   struct timeval now;
   gettimeofday(&now, NULL);
   long long timestamp = (now.tv_sec * 1000LL + now.tv_usec / 1000); // Znacznik czasu w milisekundach.
+  float temp = tempAndHumPublish();
+  int heartRate = heartRateDetection();
+  int32_t spo2_value = MAX30102_SPO2_MEASUREMENT();
+  Serial.printf("Timestamp: %lld\n", timestamp);
+  Serial.printf("Temperature: %.2f\n", temp);
+  Serial.printf("Heart Rate: %d\n", heartRate);
+  Serial.printf("SpO2: %ld\n", spo2_value);
 
-  // Pobieranie danych z sensorów
-  float temp = tempAndHumSensor.GetTemperature();
-  int32_t spo2_value = spo2ref;
-  int heartRate = beatAvg; // Używając zmiennej beatAvg z funkcji heartRateDetection
-  
   // Konstrukcja payloadu z danymi z sensorów
   char payload[256];
-  snprintf(payload, sizeof(payload), "{\"ts\":%lld,\"values\":{\"temperature\":%.2f, \"IR\":%ld, \"heartRate\":%d}}", timestamp, temp, spo2_value, heartRate);
-  
+  snprintf(payload, sizeof(payload), "{\"ts\":%lld,\"values\":{\"temperature\":%.2f, \"SPO2\":%ld, \"BPM\":%d}}", timestamp, temp, spo2_value, heartRate);
+
   Serial.println(payload); // Debug
   mqttClient.publish("v1/devices/me/telemetry", payload);
 }

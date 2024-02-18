@@ -77,7 +77,9 @@ void loop()
     Serial.println("WiFi not connected");
     resetDeviceSettings();
   }
-  getTimeStamp();
+  // getTimeStamp();
   tempAndHumPublish();
   heartRateDetection();
+  MAX30102_SPO2_MEASUREMENT();
+  publishAllSensorsData();
 }
