@@ -184,7 +184,6 @@ def telemetry(jwt_token, URL, DEVICE_ID, HA_TOKEN, HA_TEMP_URL, HA_HUM_URL, HA_B
         except requests.RequestException as e:
             print("Error:", e)
             break
-        time.sleep(0.25)
 def stop_telemetry():
     global should_continue_telemetry
     should_continue_telemetry = False
