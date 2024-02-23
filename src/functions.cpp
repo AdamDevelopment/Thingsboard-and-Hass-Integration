@@ -234,12 +234,6 @@ int heartRateDetection()
       Serial.println(beatAvg);
     }
   }
-
-  if (irValue < IR_TRESHOLD)
-  {
-    Serial.println(" No finger?");
-    beatAvg = 0;
-  }
   return beatAvg;
 }
 
@@ -332,49 +326,48 @@ void publishAllSensorsData()
   {
     // Opublikuj atrybut 'value' jako false, ponieważ nie wykryto palca
     snprintf(attributesPayload, sizeof(attributesPayload), "{\"value\":false}");
-    snprintf(payload, sizeof(payload), "{\"ts\":%lld,\"values\":{\"temperature\":%.2f, \"SPO2\":%ld, \"BPM\":%d}}", timestamp, 0);
+    snprintf(payload, sizeof(payload), "{\"ts\":%lld,\"values\":{\"temperature\":%.2f, \"SPO2\":0, \"BPM\":0}}", timestamp, temp);
     if (!mqttClient.publish("v1/devices/me/attributes", attributesPayload) || !mqttClient.publish("v1/devices/me/telemetry", payload))
     {
-      Serial.println("Attributes publish failed");
+      Serial.println("Nie wysłano atrybutów");
     }
   }
   else
   {
     // Opublikuj atrybut 'value' jako true, ponieważ wykryto prawidłowy pomiar
     snprintf(attributesPayload, sizeof(attributesPayload), "{\"value\":true}");
-    snprintf(payload, sizeof(payload), "{\"ts\":%lld,\"values\":{\"temperature\":%.2f, \"SPO2\":%ld, \"BPM\":%d}}", timestamp, temp, spo2_value, heartBpm);
+    snprintf(payload, sizeof(payload), "{\"ts\":%lld,\"values\":{\"temperature\":%.2f, \"SPO2\":%d, \"BPM\":%d}}", timestamp, temp, spo2_value, heartBpm);
     if (!mqttClient.publish("v1/devices/me/attributes", attributesPayload) || !mqttClient.publish("v1/devices/me/telemetry", payload))
     {
-      Serial.println("Attributes publish failed");
+      Serial.println("Nie wysłano atrybutów");
     }
   }
 }
 
 void publishAD()
 {
-
   char payload[100];
-  char ADAttrPayload[50];
+  char ADAttrPayload[50]; // Dodatkowy bufor dla atrybutów obecności palca
   struct timeval now;
   gettimeofday(&now, NULL);
-  ecg_value = analogRead(ECG_PIN);
   long long timestamp = (now.tv_sec * 1000LL + now.tv_usec / 1000); // Timestamp in milliseconds
+  ecg_value = analogRead(ECG_PIN);
+
   if (digitalRead(LO_MINUS_PIN) == 1 || digitalRead(LO_PLUS_PIN) == 1)
   {
     snprintf(ADAttrPayload, sizeof(ADAttrPayload), "{\"value2\":false}");
     snprintf(payload, sizeof(payload), "{\"ts\":%lld,\"values\":{\"ECG\":%d}}", timestamp, 0);
-    if (!mqttClient.publish("v1/devices/me/attributes", ADAttrPayload) || !mqttClient.publish("v1/devices/me/telemetry", payload))
-    {
-      Serial.println("Nie wysłano atrybutów");
-    }
   }
   else
   {
     snprintf(ADAttrPayload, sizeof(ADAttrPayload), "{\"value2\":true}");
     snprintf(payload, sizeof(payload), "{\"ts\":%lld,\"values\":{\"ECG\":%d}}", timestamp, ecg_value);
-    if (!mqttClient.publish("v1/devices/me/attributes", ADAttrPayload) || !mqttClient.publish("v1/devices/me/telemetry", payload))
-    {
-      Serial.println("Nie wysłano atrybutów");
-    }
+  }
+  if (!mqttClient.publish("v1/devices/me/attributes", ADAttrPayload) || !mqttClient.publish("v1/devices/me/telemetry", payload))
+  {
+    Serial.println("Nie wysłano atrybutów");
   }
 }
+
+
+// Sprawdzenie obecności palca dla czujnika pulsu

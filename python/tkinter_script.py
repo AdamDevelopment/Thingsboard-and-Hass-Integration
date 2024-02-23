@@ -3,8 +3,10 @@ import time
 from tkinter import *
 from tkinter import StringVar, Label, Entry
 import tkinter as tk
+from PIL import Image, ImageTk
 from init import load_variables
 import threading
+from datetime import timezone, datetime
 
 should_continue_telemetry = False
 
@@ -22,12 +24,12 @@ def login_auth(API_AUTH, username, password, session):
 
 def device_list(jwt_token, URL, session, listbox, device_mapping):
     devices_data = device_names(jwt_token, URL, session)
-    listbox.delete(0, tk.END)  # Clear existing items
-    device_mapping.clear()  # Clear existing device mapping
+    listbox.delete(0, tk.END)  
+    device_mapping.clear()  
 
     for name, device_id in devices_data:
-        listbox.insert(tk.END, name)  # Insert each device name
-        device_mapping[name] = device_id  # Map name to ID
+        listbox.insert(tk.END, name)  
+        device_mapping[name] = device_id  
     
     listbox.after(lambda: device_list(jwt_token, URL, session, listbox, device_mapping))
     
@@ -82,6 +84,14 @@ def loginPanel(API_AUTH, session):
     button = tk.Button(window, text="Login", font=("Arial Bold", 15), command=lambda: login_handling(username, password, API_AUTH, status_label, window, session))
     button.grid(row=4, column=0)
     button.place(relx=0.5, rely=0.6, anchor=CENTER, width=80, height=30)
+    logo_image = Image.open("logo.jpg")
+    logo_image = logo_image.resize((240, 60), Image.ADAPTIVE)
+    logo_photo = ImageTk.PhotoImage(logo_image)
+    logo_label = tk.Label(window, image=logo_photo)
+    logo_label.grid(row=5, column=0, sticky=tk.S, padx=130, pady=10)
+    creatorLabel = Label(text="Wykonał: Adam Błaszczyk, SSIB 236191", font=("Arial Bold", 14))
+    creatorLabel.grid(row=6, column=0)
+    creatorLabel.place(relx=0.5, rely=0.9, anchor=CENTER)
     window.mainloop()
     
 def device_names(jwt_token, URL, session):
@@ -112,12 +122,19 @@ def telemetry(jwt_token, URL, DEVICE_ID, HA_TOKEN, HA_TEMP_URL, HA_HUM_URL, HA_B
     should_continue_telemetry = True
     while should_continue_telemetry:
         try:
-            time.sleep(0.1)
-            tb_response = session.get(tb_url, headers=thingsboard_headers)
+            time.sleep(0.01)
+            current_time_ms = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
+            print("Current time:", current_time_ms)
+            start_ts = current_time_ms - 10000  # 5 sekund wstecz
+            print("Start time:", start_ts)
+            end_ts = current_time_ms
+            print("End time:", end_ts)
+            print("Diffrence:", end_ts - start_ts)
+            tb_response = session.get(f"{URL}/api/plugins/telemetry/DEVICE/{DEVICE_ID}/values/timeseries", headers=thingsboard_headers)
             tb_response.raise_for_status()
             tb_data = tb_response.json()
             print("Telemetry:", tb_data)
-            for key in tb_data:
+            for key in tb_data: 
                 match key:
                     case 'temperature':
                         temperature = tb_data['temperature'][0]['value']
@@ -156,17 +173,31 @@ def telemetry(jwt_token, URL, DEVICE_ID, HA_TOKEN, HA_TEMP_URL, HA_HUM_URL, HA_B
                         ha_bpm = requests.post(ha_bpm_url, headers=hass_headers, json=ha_bpm_data)
                         print("HA json:", ha_bpm.text)
                     case 'ECG':
-                        ECG = tb_data['ECG'][0]['value']
-                        ha_ecg_url = HA_ECG_URL
-                        ha_ecg_data = {
-                            "state": ECG,
-                            "attributes": {
-                                "unit_of_measurement": "mV",
-                                "friendly_name": "Czujnik EKG"
+                        tb_url_historical_data = f"{URL}/api/plugins/telemetry/DEVICE/{DEVICE_ID}/values/timeseries?keys=ECG&startTs={start_ts}&endTs={end_ts}&limit=1000&agg=NONE"
+                        tb_response_historical = session.get(tb_url_historical_data, headers=thingsboard_headers)
+                        tb_response_historical.raise_for_status()
+                        tb_data_historical = tb_response_historical.json()
+                        print("Historical ECG data:", tb_data_historical)
+                        # Przygotowanie danych do wysłania do Home Assistant
+                        ha_ecg_data_list = []
+                        for sample in reversed(tb_data_historical.get('ECG', [])):
+                            timestamp = sample['ts']
+                            ECG_value = sample['value']
+                            ha_ecg_data = {
+                                "state": ECG_value,
+                                "attributes": {
+                                    "unit_of_measurement": "mV",
+                                    "friendly_name": "Czujnik EKG",
+                                    "timestamp": timestamp
+                                }
                             }
-                        }
-                        ha_ecg = requests.post(ha_ecg_url, headers=hass_headers, json=ha_ecg_data)
-                        print("HA json:", ha_ecg.text)
+                            ha_ecg_data_list.append(ha_ecg_data)
+
+                        # Wyślij dane do Home Assistant
+                        for data in ha_ecg_data_list:
+                            ha_ecg = requests.post(HA_ECG_URL, headers=hass_headers, json=data)
+                            print("HA json:", ha_ecg.text)
+
                     case 'SPO2':
                         SPO2 = tb_data['SPO2'][0]['value']
                         ha_spo2_url = HA_SPO2_URL
@@ -200,7 +231,7 @@ def operationalPanel(jwt_token, URL, HA_TOKEN, HA_TEMP_URL, HA_HUM_URL, HA_BPM_U
     listboxWindow = tk.Listbox(window, height=3, width=20, selectmode="multiple")
     listboxWindow.grid(row=4, column=0)
     listboxWindow.place(relx=0.5, rely=0.5, anchor=CENTER)
-    device_mapping = {}  # Dictionary to map device names to IDs
+    device_mapping = {}  
     listboxButtonDeviceUpdate = tk.Button(window, text="Update list", font=("Arial Bold", 15), command=lambda: device_list(jwt_token, URL, session, listboxWindow, device_mapping))
     listboxButtonDeviceUpdate.grid(row=5, column=0)
     listboxButtonDeviceUpdate.place(relx=0.5, rely=0.4, anchor=CENTER, width=120, height=30)
@@ -210,6 +241,14 @@ def operationalPanel(jwt_token, URL, HA_TOKEN, HA_TEMP_URL, HA_HUM_URL, HA_BPM_U
     telemetry_button_stop = tk.Button(window, text="Stop script", font=("Arial Bold", 15), command=lambda: stop_telemetry())
     telemetry_button_stop.grid(row=6, column=0)
     telemetry_button_stop.place(relx=0.5, rely=0.7, anchor=CENTER, width=120, height=30)
+    logo_image = Image.open("logo.jpg")
+    logo_image = logo_image.resize((240, 60), Image.ADAPTIVE)
+    logo_photo = ImageTk.PhotoImage(logo_image)
+    logo_label = tk.Label(window, image=logo_photo)
+    logo_label.grid(row=5, column=0, sticky=tk.SW, padx=130, pady=10)
+    creatorLabel = Label(text="Wykonał: Adam Błaszczyk, SSIB 236191", font=("Arial Bold", 14))
+    creatorLabel.grid(row=6, column=0)
+    creatorLabel.place(relx=0.5, rely=0.9, anchor=CENTER)
     window.mainloop()
 
 

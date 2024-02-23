@@ -15,6 +15,4 @@ float tempAndHumPublish();
 int heartRateDetection();
 int32_t MAX30102_SPO2_MEASUREMENT();
 // void lightSleep();
-
-
 #endif // FUNCTIONS_H
