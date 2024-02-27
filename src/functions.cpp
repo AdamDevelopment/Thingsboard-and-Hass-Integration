@@ -166,11 +166,19 @@ void resetDeviceSettings()
   ESP.restart(); // Restart urządzenia
 }
 
+#include <string> // Include the necessary header file
+
 float tempAndHumPublish()
 {
   tempAndHumSensor.Begin();
   tempAndHumSensor.UpdateData();
   float temp = tempAndHumSensor.GetTemperature();
+  int shtError = tempAndHumSensor.GetError(); // Fix the syntax error by adding a semicolon
+  if (shtError != 0)
+  {
+    Serial.print("Błąd odczytu temperatury, kod błędu: ");
+    Serial.println(shtError);
+  }
   return temp;
 }
 

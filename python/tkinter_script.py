@@ -122,10 +122,10 @@ def telemetry(jwt_token, URL, DEVICE_ID, HA_TOKEN, HA_TEMP_URL, HA_HUM_URL, HA_B
     should_continue_telemetry = True
     while should_continue_telemetry:
         try:
-            time.sleep(0.01)
+            time.sleep(7)
             current_time_ms = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
             print("Current time:", current_time_ms)
-            start_ts = current_time_ms - 10000  # 5 sekund wstecz
+            start_ts = current_time_ms - 14000  # 5 sekund wstecz
             print("Start time:", start_ts)
             end_ts = current_time_ms
             print("End time:", end_ts)
@@ -173,7 +173,7 @@ def telemetry(jwt_token, URL, DEVICE_ID, HA_TOKEN, HA_TEMP_URL, HA_HUM_URL, HA_B
                         ha_bpm = requests.post(ha_bpm_url, headers=hass_headers, json=ha_bpm_data)
                         print("HA json:", ha_bpm.text)
                     case 'ECG':
-                        tb_url_historical_data = f"{URL}/api/plugins/telemetry/DEVICE/{DEVICE_ID}/values/timeseries?keys=ECG&startTs={start_ts}&endTs={end_ts}&limit=1000&agg=NONE"
+                        tb_url_historical_data = f"{URL}/api/plugins/telemetry/DEVICE/{DEVICE_ID}/values/timeseries?keys=ECG&startTs={start_ts}&endTs={end_ts}&limit=10000&agg=NONE"
                         tb_response_historical = session.get(tb_url_historical_data, headers=thingsboard_headers)
                         tb_response_historical.raise_for_status()
                         tb_data_historical = tb_response_historical.json()
@@ -183,20 +183,20 @@ def telemetry(jwt_token, URL, DEVICE_ID, HA_TOKEN, HA_TEMP_URL, HA_HUM_URL, HA_B
                         for sample in reversed(tb_data_historical.get('ECG', [])):
                             timestamp = sample['ts']
                             ECG_value = sample['value']
-                            ha_ecg_data = {
-                                "state": ECG_value,
-                                "attributes": {
-                                    "unit_of_measurement": "mV",
-                                    "friendly_name": "Czujnik EKG",
-                                    "timestamp": timestamp
-                                }
+                            ha_ecg_data_list.append({"timestamp": timestamp, 
+                                                     "value": ECG_value})
+                        ha_ecg_data = {
+                            "state": "OK",
+                            "attributes": {
+                                "unit_of_measurement": "mV",
+                                "friendly_name": "Czujnik EKG",
+                                "data": ha_ecg_data_list
+                               
                             }
-                            ha_ecg_data_list.append(ha_ecg_data)
+                        }
 
-                        # Wyślij dane do Home Assistant
-                        for data in ha_ecg_data_list:
-                            ha_ecg = requests.post(HA_ECG_URL, headers=hass_headers, json=data)
-                            print("HA json:", ha_ecg.text)
+                        ha_ecg = requests.post(HA_ECG_URL, headers=hass_headers, json=ha_ecg_data)
+                        print("HA json:", ha_ecg.text)
 
                     case 'SPO2':
                         SPO2 = tb_data['SPO2'][0]['value']
