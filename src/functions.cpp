@@ -14,6 +14,7 @@ WiFiManagerParameter custom_device_name("device", "Device Name", "", 20);
 bool shouldSaveConfig = false;
 int connectionAttempts = 0;
 const int maxConnectionAttempts = 1;
+bool MaxInitialized = false;
 
 void WifiManagerSetup()
 {
@@ -98,7 +99,7 @@ void saveConfigFile()
 
   serializeJsonPretty(json, Serial); // Wypisanie konfiguracji do konsoli przed zapisaniem
 
-  File configFile = LittleFS.open("/test_config.json", "w");
+  File configFile = LittleFS.open("/config.json", "w");
   if (!configFile)
   {
     Serial.println("Failed to open config file for writing");
@@ -166,19 +167,11 @@ void resetDeviceSettings()
   ESP.restart(); // Restart urządzenia
 }
 
-#include <string> // Include the necessary header file
-
 float tempAndHumPublish()
 {
   tempAndHumSensor.Begin();
   tempAndHumSensor.UpdateData();
   float temp = tempAndHumSensor.GetTemperature();
-  int shtError = tempAndHumSensor.GetError(); // Fix the syntax error by adding a semicolon
-  if (shtError != 0)
-  {
-    Serial.print("Błąd odczytu temperatury, kod błędu: ");
-    Serial.println(shtError);
-  }
   return temp;
 }
 
@@ -192,12 +185,6 @@ void maxSetup()
     while (1)
       ;
   }
-  ledBrightness; // Options: 0=Off to 255=50mA
-  sampleAverage; // Options: 1, 2, 4, 8, 16, 32
-  ledMode;       // Options: 1 = Red only, 2 = Red + IR, 3 = Red + IR + Green
-  sampleRate;    // Options: 50, 100, 200, 400, 800, 1000, 1600, 3200
-  pulseWidth;    // Options: 69, 118, 215, 411
-  adcRange;      // Options: 2048, 4096, 8192, 16384
   PulseAndOxygenSensor.setup(ledBrightness, sampleAverage, ledMode, sampleRate, pulseWidth, adcRange);
   PulseAndOxygenSensor.setPulseAmplitudeRed(0x0A);
   PulseAndOxygenSensor.setPulseAmplitudeGreen(0);
@@ -320,6 +307,7 @@ int32_t MAX30102_SPO2_MEASUREMENT()
 
 void publishAllSensorsData()
 {
+
   struct timeval now;
   gettimeofday(&now, NULL);
   long long timestamp = (now.tv_sec * 1000LL + now.tv_usec / 1000); // Znacznik czasu w milisekundach.
@@ -327,9 +315,45 @@ void publishAllSensorsData()
   int heartBpm = heartRateDetection();
   int32_t spo2_value = MAX30102_SPO2_MEASUREMENT();
   long irValue = PulseAndOxygenSensor.getIR();
-  // Konstrukcja payloadu z danymi z sensorów
-  char payload[256];
-  char attributesPayload[50];
+  // Sprawdzenie obecności czujników
+  bool maxPresence = (PulseAndOxygenSensor.readPartID() == 0x15);
+  int shtError = tempAndHumSensor.GetError();
+  bool shtPresent = (shtError == 0);
+  char shtPayload[50];
+  char maxPayload[50];
+  char attributesPayload[50]; // Bufor na atrybuty
+  char payload[512];          // Bufor na dane pomiarowe i informacje o obecności czujników
+  if (maxPresence && !MaxInitialized)
+  {
+    Serial.println("Inicjalizacja czujnika MAX30102.");
+    maxSetup();
+    MaxInitialized = true;
+    snprintf(maxPayload, sizeof(maxPayload), "{\"maxPresent\":true}");
+    mqttClient.publish("v1/devices/me/attributes", maxPayload);
+  }
+  else if (!maxPresence)
+  {
+    Serial.println("MAX30102 nie jest podłączony.");
+    snprintf(maxPayload, sizeof(maxPayload), "{\"maxPresent\":false}");
+    MaxInitialized = false; // Ważne, aby zresetować flagę, gdy czujnik zostanie odłączony.
+    mqttClient.publish("v1/devices/me/attributes", maxPayload);
+  }
+  else
+  {
+    snprintf(maxPayload, sizeof(maxPayload), "{\"maxPresent\":true}");
+    mqttClient.publish("v1/devices/me/attributes", maxPayload);
+  }
+  if (!shtPresent)
+  {
+    Serial.println("SHT35 nie jest podłączony.");
+    snprintf(shtPayload, sizeof(shtPayload), "{\"shtPresent\":false}");
+    mqttClient.publish("v1/devices/me/attributes", shtPayload);
+  }
+  else
+  {
+    snprintf(shtPayload, sizeof(shtPayload), "{\"shtPresent\":true}");
+    mqttClient.publish("v1/devices/me/attributes", shtPayload);
+  }
   if (irValue < IR_TRESHOLD)
   {
     // Opublikuj atrybut 'value' jako false, ponieważ nie wykryto palca
@@ -337,7 +361,7 @@ void publishAllSensorsData()
     snprintf(payload, sizeof(payload), "{\"ts\":%lld,\"values\":{\"temperature\":%.2f, \"SPO2\":0, \"BPM\":0}}", timestamp, temp);
     if (!mqttClient.publish("v1/devices/me/attributes", attributesPayload) || !mqttClient.publish("v1/devices/me/telemetry", payload))
     {
-      Serial.println("Nie wysłano atrybutów");
+      Serial.println("Nie wysłano atrybutów i danych pomiarowych");
     }
   }
   else
@@ -347,7 +371,7 @@ void publishAllSensorsData()
     snprintf(payload, sizeof(payload), "{\"ts\":%lld,\"values\":{\"temperature\":%.2f, \"SPO2\":%d, \"BPM\":%d}}", timestamp, temp, spo2_value, heartBpm);
     if (!mqttClient.publish("v1/devices/me/attributes", attributesPayload) || !mqttClient.publish("v1/devices/me/telemetry", payload))
     {
-      Serial.println("Nie wysłano atrybutów");
+      Serial.println("Nie wysłano atrybutów i danych pomiarowych");
     }
   }
 }
@@ -376,6 +400,3 @@ void publishAD()
     Serial.println("Nie wysłano atrybutów");
   }
 }
-
-
-// Sprawdzenie obecności palca dla czujnika pulsu
