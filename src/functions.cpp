@@ -14,7 +14,6 @@ WiFiManagerParameter custom_device_name("device", "Device Name", "", 20);
 bool shouldSaveConfig = false;
 int connectionAttempts = 0;
 const int maxConnectionAttempts = 1;
-bool MaxInitialized = false;
 
 void WifiManagerSetup()
 {
@@ -304,60 +303,57 @@ int32_t MAX30102_SPO2_MEASUREMENT()
   }
   return spo2;
 }
-
+// Zmienne globalne (flagi inicjalizacji czujnika MAX30102)
+bool MaxInitialized = false;
 void publishAllSensorsData()
 {
 
   struct timeval now;
   gettimeofday(&now, NULL);
   long long timestamp = (now.tv_sec * 1000LL + now.tv_usec / 1000); // Znacznik czasu w milisekundach.
-  float temp = tempAndHumPublish();
-  int heartBpm = heartRateDetection();
-  int32_t spo2_value = MAX30102_SPO2_MEASUREMENT();
-  long irValue = PulseAndOxygenSensor.getIR();
+  float temp = tempAndHumPublish();                                 // Odczytanie wartości temperatury i wilgotności
+  int heartBpm = heartRateDetection();                              // Odczytanie wartości tętna
+  int32_t spo2_value = MAX30102_SPO2_MEASUREMENT();                 // Odczytanie wartości SpO2
+  long irValue = PulseAndOxygenSensor.getIR();                      // Odczytanie wartości z diody IR
   // Sprawdzenie obecności czujników
-  bool maxPresence = (PulseAndOxygenSensor.readPartID() == 0x15);
-  int shtError = tempAndHumSensor.GetError();
-  bool shtPresent = (shtError == 0);
-  char shtPayload[50];
-  char maxPayload[50];
-  char attributesPayload[50]; // Bufor na atrybuty
-  char payload[512];          // Bufor na dane pomiarowe i informacje o obecności czujników
-  if (maxPresence && !MaxInitialized)
-  {
+  bool maxPresence = (PulseAndOxygenSensor.readPartID() == 0x15); // Odczytanie identyfikatora czujnika MAX30102
+  int shtError = tempAndHumSensor.GetError();                     // Sprawdzenie błędu czujnika SHT35
+  bool shtPresent = (shtError == 0);                              // Flaga obecności czujnika SHT35
+  // Bufory
+  char shtPayload[50];        // Bufor na atrybuty obecności czujnika SHT35
+  char maxPayload[50];        // Bufor na atrybuty obecności czujnika MAX30102
+  char attributesPayload[50]; // Bufor na atrybuty obecności palca
+  char payload[512];          // Bufor na dane pomiarowe
+  // Sprawdzenie obecności czujników MAX30102 i SHT35 oraz opublikowanie atrybutów
+  if (maxPresence && !MaxInitialized) {
     Serial.println("Inicjalizacja czujnika MAX30102.");
-    maxSetup();
-    MaxInitialized = true;
+    maxSetup(); // Ponowna nicjalizacja czujnika MAX30102
+    MaxInitialized = true; // Ustawienie flagi inicjalizacji
     snprintf(maxPayload, sizeof(maxPayload), "{\"maxPresent\":true}");
     mqttClient.publish("v1/devices/me/attributes", maxPayload);
-  }
-  else if (!maxPresence)
-  {
+  } else if (!maxPresence) {
     Serial.println("MAX30102 nie jest podłączony.");
     snprintf(maxPayload, sizeof(maxPayload), "{\"maxPresent\":false}");
-    MaxInitialized = false; // Ważne, aby zresetować flagę, gdy czujnik zostanie odłączony.
+    MaxInitialized = false; // Zresetowanie flagi inicjalizacji
     mqttClient.publish("v1/devices/me/attributes", maxPayload);
-  }
-  else
-  {
+  } else {
     snprintf(maxPayload, sizeof(maxPayload), "{\"maxPresent\":true}");
     mqttClient.publish("v1/devices/me/attributes", maxPayload);
   }
-  if (!shtPresent)
-  {
+  if (!shtPresent) {
     Serial.println("SHT35 nie jest podłączony.");
     snprintf(shtPayload, sizeof(shtPayload), "{\"shtPresent\":false}");
     mqttClient.publish("v1/devices/me/attributes", shtPayload);
-  }
-  else
-  {
+  } else {
     snprintf(shtPayload, sizeof(shtPayload), "{\"shtPresent\":true}");
     mqttClient.publish("v1/devices/me/attributes", shtPayload);
   }
+  // Sprawdzenie obecności palca
   if (irValue < IR_TRESHOLD)
   {
-    // Opublikuj atrybut 'value' jako false, ponieważ nie wykryto palca
+    // Opublikuj atrybut 'value' jako false, brak palca
     snprintf(attributesPayload, sizeof(attributesPayload), "{\"value\":false}");
+    // Opublikuj dane pomiarowe
     snprintf(payload, sizeof(payload), "{\"ts\":%lld,\"values\":{\"temperature\":%.2f, \"SPO2\":0, \"BPM\":0}}", timestamp, temp);
     if (!mqttClient.publish("v1/devices/me/attributes", attributesPayload) || !mqttClient.publish("v1/devices/me/telemetry", payload))
     {
@@ -366,8 +362,9 @@ void publishAllSensorsData()
   }
   else
   {
-    // Opublikuj atrybut 'value' jako true, ponieważ wykryto prawidłowy pomiar
+    // Opublikuj atrybut 'value' jako true, obecność palca
     snprintf(attributesPayload, sizeof(attributesPayload), "{\"value\":true}");
+    // Opublikuj dane pomiarowe
     snprintf(payload, sizeof(payload), "{\"ts\":%lld,\"values\":{\"temperature\":%.2f, \"SPO2\":%d, \"BPM\":%d}}", timestamp, temp, spo2_value, heartBpm);
     if (!mqttClient.publish("v1/devices/me/attributes", attributesPayload) || !mqttClient.publish("v1/devices/me/telemetry", payload))
     {
