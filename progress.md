@@ -62,6 +62,10 @@
 
 - Created WifiManagerSetup() for WifiManager AP and to allow ESP32 to connect to Wifi of user's choice. Also to create a possibility to use ESP32 with diffrent Wifi network, but still be able to send telemetry via MQTT</br>
 
+# 06.03 2024
+
+- Finally an and to this project. It was fun.
+
 # To-Do
 
 - SSL server's encryption **not needed**</br>
@@ -85,3 +89,4 @@
 - Correctly set up configuration.yaml in /mnt/c/homeassistant/configuration.yaml - **done**</br>
 - Correctly add MQTT external tile to Rule chain in Thingsboard and properly configure it - **not needed**</br>
 - Create test python function for sending example telemetry - **done**</br>
+
