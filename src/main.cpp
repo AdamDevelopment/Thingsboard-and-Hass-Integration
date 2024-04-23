@@ -1,58 +1,62 @@
-#include <Arduino.h>
-#include <PubSubClient.h>
-#include <WiFi.h>
+#include "variables.h"
+#include "functions.h"
+#define DELAY_AD pdMS_TO_TICKS(5)          // Opóźnienie dla Task3
+int TimeForADreading = 100 * 100000;        // 10s
 
-const char* ssid = "Your_WiFi_SSID";
-const char* password = "Your_WiFi_Password";
-
-const char* mqttServer = "thingsboardrpi.duckdns.org";
-const int mqttPort = 1883;
-const char* mqttUsername = "your_mqtt_username";
-const char* mqttPassword = "your_mqtt_password";
-
-WiFiClient wifiClient;
-PubSubClient mqttClient(wifiClient);
-
-void setup() {
-  // Initialize Wi-Fi
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.println("Connecting to WiFi...");
-  }
-  Serial.println("Connected to WiFi");
-
-  // Initialize MQTT
-  mqttClient.setServer(mqttServer, mqttPort);
-  mqttClient.setCallback(callback);
-
-  // Connect to MQTT
-  reconnect();
-}
-
-void callback(char* topic, byte* payload, unsigned int length) {
-  // Handle MQTT messages received here
-}
-
-void reconnect() {
-  while (!mqttClient.connected()) {
-    Serial.println("Attempting MQTT connection...");
-    if (mqttClient.connect("ESP32Client", mqttUsername, mqttPassword)) {
-      Serial.println("Connected to MQTT broker");
-      // Subscribe to MQTT topics if needed
-    } else {
-      Serial.print("Failed, rc=");
-      Serial.print(mqttClient.state());
-      Serial.println(" Trying again in 5 seconds...");
-      delay(5000);
+void Task2(void *pvParameters)
+{
+  uint64_t TimeADreading = esp_timer_get_time();
+  for (;;)
+  {
+    tempAndHumPublish();
+    heartRateDetection();
+    MAX30102_SPO2_MEASUREMENT();
+    // Oczekiwanie na możliwość publikacji danych (10 sekund)
+    if ((esp_timer_get_time() - TimeADreading) >= TimeForADreading)
+    {
+      if (xSemaphoreTake(publishMutex, portMAX_DELAY) == pdTRUE) // Czekanie na semafor
+      {
+        
+        publishAllSensorsData(); // Wysyłanie zebranych danych
+        xSemaphoreGive(publishMutex); // Zwolnienie semafora
+        TimeADreading = esp_timer_get_time();
+      }
     }
   }
 }
 
-void loop() {
-  if (!mqttClient.connected()) {
-    reconnect();
+void Task3(void *pvParameters)
+{
+  for (;;)
+  {
+
+    if (xSemaphoreTake(publishMutex, portMAX_DELAY) == pdTRUE) // Czekanie na semafor
+    {
+      publishAD(); // Wysyłanie danych z AD8232
+      xSemaphoreGive(publishMutex); // Zwolnienie semafora
+    }
+
+    vTaskDelay(DELAY_AD); // Opóźnienie dla Task3
   }
-  mqttClient.loop();
-  // Add your data publishing logic here
+}
+
+void setup()
+{
+  publishMutex = xSemaphoreCreateMutex(); // Tworzenie semafora
+  TaskHandle_t task2Handle; 
+  TaskHandle_t task3Handle;
+  Serial.begin(115200);
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer1, ntpServer2); // Ustawienie czasu z serwera NTP celem
+                                                                         // synchronizacji czasu w ESP32
+  WifiManagerSetup(); 
+  mqttSetup();
+  maxSetup();
+  ad8232Setup();
+
+  xTaskCreatePinnedToCore(Task2, "PublishTask", 8192, NULL, 1, &task2Handle, 0); // Task2 na rdzeniu 0
+  xTaskCreatePinnedToCore(Task3, "ADTask", 10000, NULL, 2, &task3Handle, 1);     // Task3 na rdzeniu 1 z najwyższym priorytetem
+}
+
+void loop()
+{
 }
