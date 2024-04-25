@@ -1,8 +1,8 @@
 # Thingsboard and Hass Integration
 
 ## ***Introduction***
-<p align="justify">  
-Hello everyone! This is my first ever **"big"** project published on github which is related to my Engineering Thesis. The topic was ***"Acquisition and monitoring of vital functions of the occupants in the building"***. Feel free to explore the code, experiment with it, and provide any feedback or suggestions you might have. I'm open to collaborations and would appreciate any contributions or ideas that could help improve the project. Thank you for checking out my work, and I hope it can be useful or inspiring to you in some way!"
+<p align="justify">
+Hello everyone! This is my first ever <strong>"big"</strong> project published on github which is related to my Engineering Thesis. The topic was <strong><em>"Acquisition and monitoring of vital functions of the occupants in the building"</em></strong>. Feel free to explore the code, experiment with it, and provide any feedback or suggestions you might have. I'm open to collaborations and would appreciate any contributions or ideas that could help improve the project. Thank you for checking out my work, and I hope it can be useful or inspiring to you in some way!"
 </p>
 
 ## ***Table of contents***
@@ -33,7 +33,7 @@ The main goal of the project was to prepare a system that allows an acquisition 
 ## ***3. Prerequisites***
 
 > [!NOTE]
-> Elements listed below are just my subjective choices, which allowed me to create this project, hence let me work as effective as possible, be free to pick anything that suits you.
+> Elements listed below are just my subjective choices, which allowed me to create this project, hence, let me work as effective as possible, be free to pick anything that suits you.
 
 ### software:
 
