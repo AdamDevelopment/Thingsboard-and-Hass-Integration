@@ -33,9 +33,8 @@ The main goal of the project was to prepare a system that allows an acquisition 
 
 ## ***3. Prerequisites***
 > [!NOTE]
->  - Elements listed below are just my subjective choices, which let me to create this project, hence, allowed smooth and effective workflow within my workspace, be free to pick anything that suits you.
->  - Learning the hard way, it's better to take a shot with Hass that supports HACS (Home Assistant Community Store.
-
+>  - Elements listed below are just my subjective choices, which let me to create this project, hence, allowed smooth and effective workflow within my workspace, be free to pick anything that suits you
+>  - Learned the hard way, it's better to take a shot with Hass that supports HACS (Home Assistant Community Store).
 
 ### Software:
 - Visual Studio Code
