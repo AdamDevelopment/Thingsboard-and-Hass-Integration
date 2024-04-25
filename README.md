@@ -36,14 +36,14 @@ The main goal of the project was to prepare a system that allows an acquisition 
 >  - Elements listed below are just my subjective choices, which let me to create this project, hence, allowed smooth and effective workflow within my workspace, be free to pick anything that suits you
 >  - Learned the hard way, it's better to take a shot with Hass that supports HACS (Home Assistant Community Store).
 
-### Software:
+### Software
 - Visual Studio Code
 - PlatformIO extension
 - Docker
 - Thingsboard Community Edition
 - Home Assistant (Core)
 
-### Hardware:
+### Hardware
 - Raspberry Pi 4B 8GB
 - FireBeetle 2 ESP32-E IoT
 - MAX30102 (pulse and saturation)
