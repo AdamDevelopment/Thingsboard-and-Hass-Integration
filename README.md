@@ -55,20 +55,11 @@ The main goal of the project was to prepare a system that allows an acquisition 
 - SHT35 (temperature)
 
 ## ***4. Getting Started***
-
-1. Clone the repository: <https://github.com/AdamDevelopment/Thingsboard-and-Hass-Integration.git>
-2. Navigate into the repository directory:
-cd Thingsboard-and-Hass-Integration
-
-3. Follow the setup instructions for PlatformIO and integrate the necessary libraries:
-
-- Wire
-- knolleary/PubSubClient@^2.8
-- <https://github.com/Risele/SHT3x.git>
-- sparkfun/SparkFun MAX3010x Pulse and Proximity Sensor Library@^1.1.2
-- <https://github.com/tzapu/WiFiManager>
-- <https://github.com/bblanchon/ArduinoJson>
-
+1. Clone the repository https://github.com/AdamDevelopment/Thingsboard-and-Hass-Integration.git
+2. Follow the setup instructions for PlatformIO
+3. Download necessary libraries:
+  - Wire
+  - knolleary/PubSubClient@^2.8
 ## ***5. Contributing***
 
 Contributions are welcome! Please feel free to submit pull requests or open issues to suggest improvements or report bugs.
