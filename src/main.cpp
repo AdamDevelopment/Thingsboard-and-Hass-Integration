@@ -1,6 +1,6 @@
 #include "variables.h"
 #include "functions.h"
-#define DELAY_AD pdMS_TO_TICKS(5)          // Opóźnienie dla Task3
+#define DELAY_AD pdMS_TO_TICKS(5)          // delay for Task3
 int TimeForADreading = 100 * 100000;        // 10s
 
 void Task2(void *pvParameters)
@@ -11,14 +11,14 @@ void Task2(void *pvParameters)
     tempAndHumPublish();
     heartRateDetection();
     MAX30102_SPO2_MEASUREMENT();
-    // Oczekiwanie na możliwość publikacji danych (10 sekund)
+    // Waiting for the time to send the data
     if ((esp_timer_get_time() - TimeADreading) >= TimeForADreading)
     {
-      if (xSemaphoreTake(publishMutex, portMAX_DELAY) == pdTRUE) // Czekanie na semafor
+      if (xSemaphoreTake(publishMutex, portMAX_DELAY) == pdTRUE) // waiting for the semaphore
       {
         
-        publishAllSensorsData(); // Wysyłanie zebranych danych
-        xSemaphoreGive(publishMutex); // Zwolnienie semafora
+        publishAllSensorsData(); // Sending all data
+        xSemaphoreGive(publishMutex); // releasing the semaphore
         TimeADreading = esp_timer_get_time();
       }
     }
@@ -30,31 +30,30 @@ void Task3(void *pvParameters)
   for (;;)
   {
 
-    if (xSemaphoreTake(publishMutex, portMAX_DELAY) == pdTRUE) // Czekanie na semafor
+    if (xSemaphoreTake(publishMutex, portMAX_DELAY) == pdTRUE) // Rezerwacja semafora
     {
-      publishAD(); // Wysyłanie danych z AD8232
-      xSemaphoreGive(publishMutex); // Zwolnienie semafora
+      publishAD(); // Sending AD data
+      xSemaphoreGive(publishMutex); // Releasing the semaphore
     }
 
-    vTaskDelay(DELAY_AD); // Opóźnienie dla Task3
+    vTaskDelay(DELAY_AD); // Delay for Task3
   }
 }
 
 void setup()
 {
-  publishMutex = xSemaphoreCreateMutex(); // Tworzenie semafora
+  publishMutex = xSemaphoreCreateMutex(); // Creating a semaphore
   TaskHandle_t task2Handle; 
   TaskHandle_t task3Handle;
   Serial.begin(115200);
-  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer1, ntpServer2); // Ustawienie czasu z serwera NTP celem
-                                                                         // synchronizacji czasu w ESP32
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer1, ntpServer2); // Setting up time synchronization in ESP32
   WifiManagerSetup(); 
   mqttSetup();
   maxSetup();
   ad8232Setup();
 
-  xTaskCreatePinnedToCore(Task2, "PublishTask", 8192, NULL, 1, &task2Handle, 0); // Task2 na rdzeniu 0
-  xTaskCreatePinnedToCore(Task3, "ADTask", 10000, NULL, 2, &task3Handle, 1);     // Task3 na rdzeniu 1 z najwyższym priorytetem
+  xTaskCreatePinnedToCore(Task2, "PublishTask", 8192, NULL, 1, &task2Handle, 0); // Task2 on core 0 with priority 1
+  xTaskCreatePinnedToCore(Task3, "ADTask", 10000, NULL, 2, &task3Handle, 1);     // Task2 on core 1 with priority 2
 }
 
 void loop()
