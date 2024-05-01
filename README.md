@@ -1,5 +1,9 @@
 # Thingsboard and Hass Integration
 
+## License
+
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+
 ## ***Introduction***
 <p align="justify">
 Hello everyone! This is my first ever <strong>"big"</strong> project published on github which is related to my Engineering Thesis. The topic was <strong><em>"Acquisition and monitoring of vital functions of the occupants in the building"</em></strong>. Feel free to explore the code, experiment with it, and provide any feedback or suggestions you might have. I'm open to collaborations and would appreciate any contributions or ideas that could help improve the project. Thank you for checking out my work, and I hope it can be useful or inspiring to you in some way!
@@ -69,6 +73,3 @@ cd Thingsboard-and-Hass-Integration
 
 Contributions are welcome! Please feel free to submit pull requests or open issues to suggest improvements or report bugs.
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
