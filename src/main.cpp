@@ -30,7 +30,7 @@ void Task3(void *pvParameters)
   for (;;)
   {
 
-    if (xSemaphoreTake(publishMutex, portMAX_DELAY) == pdTRUE) // Rezerwacja semafora
+    if (xSemaphoreTake(publishMutex, portMAX_DELAY) == pdTRUE) // waiting for semaphore
     {
       publishAD(); // Sending AD data
       xSemaphoreGive(publishMutex); // Releasing the semaphore
