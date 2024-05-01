@@ -37,20 +37,20 @@ byte rateSpot = 0;
 long lastBeat = 0; // Time at which the last beat occurred
 float bpm;
 int beatAvg;
-// Obiekt inicjalizacji stanu wejściowego czujnika MAX30102
+// Object of enum type for storing the current state of the MAX30102 sensor
 OXY_MEASURE_STATES MAX30102_STATE = INIT;
-// Zmienna do przechowywania indeksu próbki
+// variable for storing the current state of the MAX30102 sensor
 int sampleIndex = 0;
-// Zmienna do przechowywania czasu ostatniej próbki
+// variable for storing the time of the last measurement
 unsigned long lastSampleTime = 0;
-// Zmienna do przechowywania czasu ostatniego pomiaru
+// variable for storing the time of the last SPO2 measurement
 const unsigned long SPO2_WAIT_TIME = 4000;
 
-// zmienne do przechowywania danych z czujnika
-uint32_t irBuffer[100];  // dioda podczerwona
-uint32_t redBuffer[100]; // dioda czerwona
+// variables for MAX30102
+uint32_t irBuffer[100];  // infrared diode
+uint32_t redBuffer[100]; // red diode
 
-// zmienne do przechowywania danych z czujnika
+// variables to calculate SPO2
 int32_t bufferLength;
 int32_t spo2;
 int8_t validSPO2;
@@ -58,7 +58,7 @@ int32_t heartRate;
 int8_t validHeartRate;
 
 
-// zmienne inicjalizacyjne dla MAX30102
+// initial values for MAX30102
 byte ledBrightness = 60; 
 byte sampleAverage = 4;  
 byte ledMode = 2;        

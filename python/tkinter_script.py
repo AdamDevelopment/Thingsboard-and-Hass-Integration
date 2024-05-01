@@ -84,12 +84,7 @@ def loginPanel(API_AUTH, session):
     button = tk.Button(window, text="Login", font=("Arial Bold", 15), command=lambda: login_handling(username, password, API_AUTH, status_label, window, session))
     button.grid(row=4, column=0)
     button.place(relx=0.5, rely=0.6, anchor=CENTER, width=80, height=30)
-    logo_image = Image.open("logo.jpg")
-    logo_image = logo_image.resize((240, 60), Image.ADAPTIVE)
-    logo_photo = ImageTk.PhotoImage(logo_image)
-    logo_label = tk.Label(window, image=logo_photo)
-    logo_label.grid(row=5, column=0, sticky=tk.S, padx=130, pady=10)
-    creatorLabel = Label(text="Wykonał: Adam Błaszczyk, SSIB 236191", font=("Arial Bold", 14))
+    creatorLabel = Label(text="Created by: AdamDevelopment", font=("Arial Bold", 14))
     creatorLabel.grid(row=6, column=0)
     creatorLabel.place(relx=0.5, rely=0.9, anchor=CENTER)
     window.mainloop()
@@ -125,7 +120,7 @@ def telemetry(jwt_token, URL, DEVICE_ID, HA_TOKEN, HA_TEMP_URL, HA_HUM_URL, HA_B
             time.sleep(7)
             current_time_ms = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
             print("Current time:", current_time_ms)
-            start_ts = current_time_ms - 14000  # 5 sekund wstecz
+            start_ts = current_time_ms - 14000  # 5 seconds before current time
             print("Start time:", start_ts)
             end_ts = current_time_ms
             print("End time:", end_ts)
@@ -178,7 +173,7 @@ def telemetry(jwt_token, URL, DEVICE_ID, HA_TOKEN, HA_TEMP_URL, HA_HUM_URL, HA_B
                         tb_response_historical.raise_for_status()
                         tb_data_historical = tb_response_historical.json()
                         print("Historical ECG data:", tb_data_historical)
-                        # Przygotowanie danych do wysłania do Home Assistant
+                        # Preparing data for Home Assistant
                         ha_ecg_data_list = []
                         for sample in reversed(tb_data_historical.get('ECG', [])):
                             timestamp = sample['ts']
@@ -241,11 +236,6 @@ def operationalPanel(jwt_token, URL, HA_TOKEN, HA_TEMP_URL, HA_HUM_URL, HA_BPM_U
     telemetry_button_stop = tk.Button(window, text="Stop script", font=("Arial Bold", 15), command=lambda: stop_telemetry())
     telemetry_button_stop.grid(row=6, column=0)
     telemetry_button_stop.place(relx=0.5, rely=0.7, anchor=CENTER, width=120, height=30)
-    logo_image = Image.open("logo.jpg")
-    logo_image = logo_image.resize((240, 60), Image.ADAPTIVE)
-    logo_photo = ImageTk.PhotoImage(logo_image)
-    logo_label = tk.Label(window, image=logo_photo)
-    logo_label.grid(row=5, column=0, sticky=tk.SW, padx=130, pady=10)
     creatorLabel = Label(text="Wykonał: Adam Błaszczyk, SSIB 236191", font=("Arial Bold", 14))
     creatorLabel.grid(row=6, column=0)
     creatorLabel.place(relx=0.5, rely=0.9, anchor=CENTER)
