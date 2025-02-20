@@ -120,7 +120,7 @@ To address the limitations of Home Assistant in processing high-frequency real-t
 1. Physically swapped diodes in MAX30102 (red and infrared). Software swap helped - https://github.com/aromring/MAX30102_by_RF/issues/13 and https://github.com/sparkfun/SparkFun_MAX3010x_Sensor_Library/issues/25
 2. Due to low amount of Flash memory, I wasn't able to do OTA software updates (Over-The-Air)
 3. Sleep modes are possible https://docs.espressif.com/projects/espidf/en/stable/esp32/api-reference/system/sleep_modes.html and working (kinda), but I couldn't make it work with my solution. Multi-threading and LightSleep are not good friends
-4. The amount of collected data made my server unsuable due to little to no free memory. I had to change `sql.ttl.ts.ts_key_value_ttl` parameter in Thingsboard's config to 7 days (in seconds) and manually delete records
+4. The amount of collected data made my server unsusable due to little to no free memory. I had to change `sql.ttl.ts.ts_key_value_ttl` parameter in Thingsboard's config to 7 days (in seconds) and manually delete records
 5. I needed to implement a `for` loop to correctly assign timestamps when sending data to Home Assistant. Without these timestamps, Thingsboard defaults to using the server's time for telemetry data. However, when transmitting JSON with specific headers (i.e ECG), Home Assistant had trouble interpreting this data due to missing or incorrect timestamps, resulting in errors displaying this data on widgets
 6. Poor quality of photos, sorry
 
